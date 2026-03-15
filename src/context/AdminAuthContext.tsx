@@ -9,8 +9,12 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api";
+// Strip trailing /api or / then always append /api — so the env var works
+// whether set as "http://host:5000" OR "http://host:5000/api"
+const _rawBase = (
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"
+).replace(/\/api\/?$/, "").replace(/\/$/, "");
+const API_BASE = `${_rawBase}/api`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

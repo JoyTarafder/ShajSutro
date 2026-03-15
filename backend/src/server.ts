@@ -18,7 +18,7 @@ connectDB();
 // ─── Express app setup ────────────────────────────────────────────────────────
 const app = express();
 
-// CORS — allow localhost in dev and any origins listed in CLIENT_URL (comma-separated)
+// CORS — allow localhost, *.vercel.app, and any origins in CLIENT_URL (comma-separated)
 const allowedOrigins = (process.env.CLIENT_URL ?? "")
   .split(",")
   .map((u) => u.trim())
@@ -31,6 +31,10 @@ app.use(
       if (!origin) return callback(null, true);
       // Allow any localhost / 127.0.0.1 origin regardless of port
       if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+      // Allow all Vercel deployment URLs (*.vercel.app)
+      if (/^https:\/\/[^.]+\.vercel\.app$/.test(origin)) {
         return callback(null, true);
       }
       // Allow any explicitly listed origin
