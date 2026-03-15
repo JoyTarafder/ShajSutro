@@ -18,7 +18,12 @@ connectDB();
 // ─── Express app setup ────────────────────────────────────────────────────────
 const app = express();
 
-// CORS — allow any localhost port so dev server port changes don't break things
+// CORS — allow localhost in dev and any origins listed in CLIENT_URL (comma-separated)
+const allowedOrigins = (process.env.CLIENT_URL ?? "")
+  .split(",")
+  .map((u) => u.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -28,9 +33,8 @@ app.use(
       if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
         return callback(null, true);
       }
-      // Allow the explicit CLIENT_URL env var if set
-      const allowed = process.env.CLIENT_URL;
-      if (allowed && origin === allowed) return callback(null, true);
+      // Allow any explicitly listed origin
+      if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,
