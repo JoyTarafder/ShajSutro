@@ -19,6 +19,8 @@ export const products: Product[] = [
     rating: 4.5,
     reviews: 128,
     inStock: true,
+    stock: 14,
+    totalOrdered: 312,
     tags: ["shirt", "linen", "casual"],
   },
   {
@@ -38,6 +40,8 @@ export const products: Product[] = [
     rating: 4.8,
     reviews: 64,
     inStock: true,
+    stock: 22,
+    totalOrdered: 145,
     tags: ["blazer", "formal", "wool"],
   },
   {
@@ -56,6 +60,8 @@ export const products: Product[] = [
     rating: 4.3,
     reviews: 210,
     inStock: true,
+    stock: 8,
+    totalOrdered: 487,
     tags: ["trousers", "chino", "casual"],
   },
   {
@@ -76,6 +82,8 @@ export const products: Product[] = [
     rating: 4.7,
     reviews: 89,
     inStock: true,
+    stock: 5,
+    totalOrdered: 203,
     tags: ["sweater", "merino", "knitwear"],
   },
   {
@@ -95,6 +103,8 @@ export const products: Product[] = [
     rating: 4.6,
     reviews: 156,
     inStock: true,
+    stock: 18,
+    totalOrdered: 356,
     tags: ["dress", "floral", "wrap"],
   },
   {
@@ -114,6 +124,8 @@ export const products: Product[] = [
     rating: 4.9,
     reviews: 342,
     inStock: true,
+    stock: 3,
+    totalOrdered: 891,
     tags: ["jeans", "denim", "high-rise"],
   },
   {
@@ -132,6 +144,8 @@ export const products: Product[] = [
     rating: 4.8,
     reviews: 78,
     inStock: true,
+    stock: 25,
+    totalOrdered: 178,
     tags: ["sweater", "cashmere", "turtleneck"],
   },
   {
@@ -152,6 +166,8 @@ export const products: Product[] = [
     rating: 4.5,
     reviews: 112,
     inStock: true,
+    stock: 7,
+    totalOrdered: 267,
     tags: ["skirt", "silk", "elegant"],
   },
   {
@@ -171,6 +187,8 @@ export const products: Product[] = [
     rating: 4.7,
     reviews: 58,
     inStock: true,
+    stock: 30,
+    totalOrdered: 134,
     tags: ["shoes", "leather", "formal"],
   },
   {
@@ -190,6 +208,8 @@ export const products: Product[] = [
     rating: 4.6,
     reviews: 298,
     inStock: true,
+    stock: 12,
+    totalOrdered: 743,
     tags: ["sneakers", "casual", "canvas"],
   },
   {
@@ -210,6 +230,8 @@ export const products: Product[] = [
     rating: 4.8,
     reviews: 145,
     inStock: true,
+    stock: 6,
+    totalOrdered: 389,
     tags: ["boots", "leather", "ankle"],
   },
   {
@@ -228,6 +250,8 @@ export const products: Product[] = [
     rating: 4.4,
     reviews: 82,
     inStock: true,
+    stock: 20,
+    totalOrdered: 198,
     tags: ["loafers", "suede", "casual"],
   },
   {
@@ -246,6 +270,8 @@ export const products: Product[] = [
     rating: 4.5,
     reviews: 174,
     inStock: true,
+    stock: 45,
+    totalOrdered: 412,
     tags: ["belt", "leather", "accessories"],
   },
   {
@@ -266,6 +292,8 @@ export const products: Product[] = [
     rating: 4.7,
     reviews: 93,
     inStock: true,
+    stock: 11,
+    totalOrdered: 234,
     tags: ["scarf", "wool", "winter"],
   },
   {
@@ -285,6 +313,8 @@ export const products: Product[] = [
     rating: 4.3,
     reviews: 221,
     inStock: true,
+    stock: 32,
+    totalOrdered: 531,
     tags: ["bag", "tote", "canvas"],
   },
   {
@@ -304,6 +334,8 @@ export const products: Product[] = [
     rating: 4.9,
     reviews: 189,
     inStock: true,
+    stock: 9,
+    totalOrdered: 478,
     tags: ["watch", "minimalist", "accessories"],
   },
   {
@@ -323,6 +355,8 @@ export const products: Product[] = [
     rating: 4.6,
     reviews: 67,
     inStock: true,
+    stock: 19,
+    totalOrdered: 152,
     tags: ["blazer", "linen", "oversized"],
   },
   {
@@ -342,6 +376,8 @@ export const products: Product[] = [
     rating: 4.8,
     reviews: 512,
     inStock: true,
+    stock: 2,
+    totalOrdered: 1248,
     tags: ["t-shirt", "essential", "cotton"],
   },
   {
@@ -362,6 +398,8 @@ export const products: Product[] = [
     rating: 4.5,
     reviews: 103,
     inStock: true,
+    stock: 13,
+    totalOrdered: 276,
     tags: ["skirt", "midi", "pleated"],
   },
   {
@@ -380,6 +418,8 @@ export const products: Product[] = [
     rating: 4.6,
     reviews: 248,
     inStock: true,
+    stock: 38,
+    totalOrdered: 593,
     tags: ["wallet", "leather", "accessories"],
   },
   {
@@ -399,6 +439,8 @@ export const products: Product[] = [
     rating: 4.4,
     reviews: 76,
     inStock: true,
+    stock: 24,
+    totalOrdered: 167,
     tags: ["trousers", "linen", "relaxed"],
   },
   {
@@ -417,6 +459,8 @@ export const products: Product[] = [
     rating: 4.7,
     reviews: 167,
     inStock: true,
+    stock: 16,
+    totalOrdered: 398,
     tags: ["shirt", "oxford", "classic"],
   },
 ];

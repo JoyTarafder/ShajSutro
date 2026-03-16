@@ -19,7 +19,7 @@ export const getProducts = asyncHandler(
       limit = "12",
     } = req.query as Record<string, string | undefined>;
 
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = { isVisible: { $ne: false } };
 
     if (category) filter.category = category;
     if (badge) filter.badge = badge;
@@ -93,6 +93,9 @@ export const createProduct = asyncHandler(
       colors,
       badge,
       inStock,
+      isFeatured,
+      isVisible,
+      stock,
       tags,
     } = req.body as {
       name: string;
@@ -105,6 +108,9 @@ export const createProduct = asyncHandler(
       colors?: string[];
       badge?: "New" | "Sale" | "Best Seller";
       inStock?: boolean;
+      isFeatured?: boolean;
+      isVisible?: boolean;
+      stock?: number;
       tags?: string[];
     };
 
@@ -129,6 +135,9 @@ export const createProduct = asyncHandler(
       colors: colors ?? [],
       badge,
       inStock: inStock ?? true,
+      isFeatured: isFeatured ?? false,
+      isVisible: isVisible ?? true,
+      stock: stock ?? 0,
       tags: tags ?? [],
     });
 
@@ -157,6 +166,9 @@ export const updateProduct = asyncHandler(
       colors: string[];
       badge: string;
       inStock: boolean;
+      isFeatured: boolean;
+      isVisible: boolean;
+      stock: number;
       tags: string[];
     }>;
 

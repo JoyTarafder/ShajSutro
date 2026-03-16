@@ -14,6 +14,12 @@ export interface IUser {
   email: string;
   password: string;
   role: "user" | "admin";
+  isBlocked: boolean;
+  isEmailVerified: boolean;
+  verificationCode?: string;
+  verificationCodeExpiry?: Date;
+  passwordResetCode?: string;
+  passwordResetCodeExpiry?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -53,6 +59,10 @@ export interface IProduct {
   rating: number;
   reviews: number;
   inStock: boolean;
+  isFeatured: boolean;
+  isVisible: boolean;
+  stock: number;
+  totalOrdered: number;
   tags: string[];
   createdAt?: Date;
   updatedAt?: Date;
@@ -84,7 +94,7 @@ export interface ICartDocument extends ICart, Document {
 // ─── Order ────────────────────────────────────────────────────────────────────
 
 export interface IOrderItem {
-  product: Types.ObjectId;
+  product?: Types.ObjectId;
   name: string;
   price: number;
   quantity: number;
@@ -109,10 +119,13 @@ export interface IOrder {
   user: Types.ObjectId;
   items: IOrderItem[];
   shippingAddress: IShippingAddress;
-  paymentMethod: string;
+  paymentMethod: "bkash" | "nagad" | "rocket" | "cod";
+  txnId?: string;
+  paymentStatus: "pending_verification" | "pending_delivery" | "paid";
   subtotal: number;
   shippingCost: number;
   tax: number;
+  discount: number;
   total: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   createdAt?: Date;
@@ -120,6 +133,26 @@ export interface IOrder {
 }
 
 export interface IOrderDocument extends IOrder, Document {
+  _id: Types.ObjectId;
+}
+
+// ─── Promo Code ───────────────────────────────────────────────────────────────
+
+export interface IPromoCode {
+  code: string;
+  type: "percentage" | "fixed";
+  value: number;
+  minOrderAmount: number;
+  maxUses: number | null;
+  usedCount: number;
+  isActive: boolean;
+  expiresAt: Date | null;
+  description: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IPromoCodeDocument extends IPromoCode, Document {
   _id: Types.ObjectId;
 }
 

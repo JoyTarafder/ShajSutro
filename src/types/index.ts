@@ -12,6 +12,8 @@ export interface Product {
   rating: number;
   reviews: number;
   inStock: boolean;
+  stock?: number;
+  totalOrdered?: number;
   tags?: string[];
 }
 

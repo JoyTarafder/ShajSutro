@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import Logo from "@/components/layout/Logo";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -17,8 +18,52 @@ const navLinks = [
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInitial, setUserInitial] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const { totalItems, openCart } = useCart();
   const pathname = usePathname();
+  const router = useRouter();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check login status whenever route changes
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLoggedIn(true);
+      // Decode name initial from /api/auth/me (best-effort, silent)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          const name: string = d?.data?.name ?? "";
+          setUserInitial(name.charAt(0).toUpperCase());
+        })
+        .catch(() => setUserInitial("U"));
+    } else {
+      setIsLoggedIn(false);
+      setUserInitial("");
+    }
+  }, [pathname]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setDropdownOpen(false);
+    router.push("/login");
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -46,12 +91,7 @@ export default function Navbar() {
       >
         <nav className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="flex items-center justify-between h-20">
-            <Link
-              href="/"
-              className="text-xl font-bold tracking-[-0.02em] text-charcoal-950 hover:opacity-70 transition-opacity duration-300"
-            >
-              ShajSutro
-            </Link>
+            <Logo href="/" size="md" />
 
             <div className="hidden md:flex items-center gap-10">
               {navLinks.map((link) => (
@@ -76,15 +116,61 @@ export default function Navbar() {
                 </svg>
               </Link>
 
-              <Link
-                href="/login"
-                className="hidden sm:flex p-2.5 text-charcoal-400 hover:text-charcoal-900 rounded-full hover:bg-charcoal-50 transition-all duration-300"
-                aria-label="Account"
-              >
-                <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
-              </Link>
+              {isLoggedIn ? (
+                <div ref={dropdownRef} className="relative hidden sm:block">
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="w-8 h-8 rounded-full bg-charcoal-950 text-white text-xs font-semibold flex items-center justify-center hover:bg-charcoal-700 transition-colors duration-200 select-none"
+                    aria-label="Account menu"
+                  >
+                    {userInitial}
+                  </button>
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-2.5 w-44 bg-white rounded-2xl border border-charcoal-100 shadow-soft-md py-1.5 z-50">
+                      <Link
+                        href="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-charcoal-700 hover:bg-charcoal-50 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                        My Profile
+                      </Link>
+                      <Link
+                        href="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-charcoal-700 hover:bg-charcoal-50 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                        </svg>
+                        My Orders
+                      </Link>
+                      <div className="my-1.5 h-px bg-charcoal-50" />
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                        </svg>
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="hidden sm:flex p-2.5 text-charcoal-400 hover:text-charcoal-900 rounded-full hover:bg-charcoal-50 transition-all duration-300"
+                  aria-label="Account"
+                >
+                  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  </svg>
+                </Link>
+              )}
 
               <button
                 onClick={openCart}
@@ -134,6 +220,9 @@ export default function Navbar() {
         }`}
       >
         <div className="px-6 py-6 space-y-1">
+          <div className="pb-4 mb-2 border-b border-charcoal-100">
+            <Logo href="/" size="sm" />
+          </div>
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -147,13 +236,21 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <div className="pt-4 border-t border-charcoal-100 mt-2">
-            <Link
-              href="/login"
-              className="btn-secondary w-full text-center text-sm"
-            >
-              Sign in
-            </Link>
+          <div className="pt-4 border-t border-charcoal-100 mt-2 space-y-2">
+            {isLoggedIn ? (
+              <>
+                <Link href="/profile" className="btn-secondary w-full text-center text-sm">
+                  My Profile
+                </Link>
+                <button onClick={handleLogout} className="w-full text-center text-sm text-red-500 py-3 hover:bg-red-50 rounded-full transition-colors">
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <Link href="/login" className="btn-secondary w-full text-center text-sm">
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </div>

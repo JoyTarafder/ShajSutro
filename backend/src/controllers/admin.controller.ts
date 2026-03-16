@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
+import bcrypt from "bcryptjs";
 import User from "../models/User";
 import Order from "../models/Order";
 import Product from "../models/Product";
@@ -10,6 +11,9 @@ import { AuthRequest } from "../types";
 
 export const getDashboardStats = asyncHandler(
   async (_req: Request, res: Response): Promise<void> => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     const [
       totalUsers,
       totalOrders,
@@ -17,6 +21,7 @@ export const getDashboardStats = asyncHandler(
       revenueResult,
       ordersByStatus,
       recentOrders,
+      revenueByDay,
     ] = await Promise.all([
       User.countDocuments({ role: "user" }),
       Order.countDocuments(),
@@ -32,6 +37,24 @@ export const getDashboardStats = asyncHandler(
         .sort({ createdAt: -1 })
         .limit(5)
         .populate("user", "name email"),
+      Order.aggregate([
+        {
+          $match: {
+            status: { $ne: "cancelled" },
+            createdAt: { $gte: thirtyDaysAgo },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            },
+            revenue: { $sum: "$total" },
+          },
+        },
+        { $sort: { _id: 1 } },
+        { $project: { date: "$_id", revenue: 1, _id: 0 } },
+      ]),
     ]);
 
     const totalRevenue: number =
@@ -46,6 +69,44 @@ export const getDashboardStats = asyncHandler(
         totalRevenue,
         ordersByStatus,
         recentOrders,
+        revenueByDay,
+      },
+    });
+  }
+);
+
+// ─── GET /api/admin/products ──────────────────────────────────────────────────
+// Returns ALL products (including hidden) for admin management
+
+export const getAdminProducts = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const page = Math.max(1, parseInt((req.query.page as string) ?? "1"));
+    const limit = Math.min(50, parseInt((req.query.limit as string) ?? "12"));
+    const skip = (page - 1) * limit;
+    const search = req.query.search as string | undefined;
+    const category = req.query.category as string | undefined;
+
+    const filter: Record<string, unknown> = {};
+    if (category) filter.category = category;
+    if (search) filter.$text = { $search: search };
+
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate("category", "name slug")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Product.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: products,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
       },
     });
   }
@@ -81,13 +142,52 @@ export const getAllUsers = asyncHandler(
   }
 );
 
+// ─── POST /api/admin/users ────────────────────────────────────────────────────
+
+export const createUser = asyncHandler(
+  async (_req: Request, res: Response): Promise<void> => {
+    const { name, email, password, role } = _req.body as {
+      name: string;
+      email: string;
+      password: string;
+      role?: "user" | "admin";
+    };
+
+    if (!name || !email || !password) {
+      throw new AppError("Name, email, and password are required", 400);
+    }
+
+    const exists = await User.findOne({ email: email.toLowerCase() });
+    if (exists) throw new AppError("A user with this email already exists", 409);
+
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: role ?? "user",
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "User created",
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isBlocked: user.isBlocked,
+        createdAt: user.createdAt,
+      },
+    });
+  }
+);
+
 // ─── PUT /api/admin/users/:id ─────────────────────────────────────────────────
 
 export const updateUser = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     const { role, name } = req.body as { role?: "user" | "admin"; name?: string };
 
-    // Prevent self-demotion
     if (req.user?._id.toString() === req.params.id && role === "user") {
       throw new AppError("You cannot demote your own admin account", 400);
     }
@@ -103,6 +203,32 @@ export const updateUser = asyncHandler(
     res.status(200).json({
       success: true,
       message: "User updated",
+      data: user,
+    });
+  }
+);
+
+// ─── PUT /api/admin/users/:id/block ──────────────────────────────────────────
+
+export const blockUser = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    if (req.user?._id.toString() === req.params.id) {
+      throw new AppError("You cannot block your own account", 400);
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) throw new AppError("User not found", 404);
+
+    if (user.role === "admin") {
+      throw new AppError("Admin accounts cannot be blocked", 400);
+    }
+
+    user.isBlocked = !user.isBlocked;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: user.isBlocked ? "User blocked" : "User unblocked",
       data: user,
     });
   }
@@ -136,9 +262,22 @@ export const getAllOrders = asyncHandler(
     const limit = Math.min(50, parseInt((req.query.limit as string) ?? "20"));
     const skip = (page - 1) * limit;
     const status = req.query.status as string | undefined;
+    const dateFrom = req.query.dateFrom as string | undefined;
+    const dateTo = req.query.dateTo as string | undefined;
 
     const filter: Record<string, unknown> = {};
     if (status) filter.status = status;
+
+    if (dateFrom || dateTo) {
+      const dateFilter: Record<string, Date> = {};
+      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        dateFilter.$lte = end;
+      }
+      filter.createdAt = dateFilter;
+    }
 
     const [orders, total] = await Promise.all([
       Order.find(filter)
@@ -153,6 +292,23 @@ export const getAllOrders = asyncHandler(
       success: true,
       data: orders,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  }
+);
+
+// ─── GET /api/admin/orders/:id ────────────────────────────────────────────────
+
+export const getOrderDetails = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const order = await Order.findById(req.params.id).populate(
+      "user",
+      "name email"
+    );
+    if (!order) throw new AppError("Order not found", 404);
+
+    res.status(200).json({
+      success: true,
+      data: order,
     });
   }
 );
@@ -181,6 +337,32 @@ export const updateOrderStatus = asyncHandler(
     res.status(200).json({
       success: true,
       message: `Order status updated to '${status}'`,
+      data: order,
+    });
+  }
+);
+
+// ─── PUT /api/admin/orders/:id/confirm-payment ────────────────────────────────
+
+export const confirmPayment = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const order = await Order.findById(req.params.id).populate("user", "name email");
+    if (!order) throw new AppError("Order not found", 404);
+
+    if (order.paymentStatus === "paid") {
+      throw new AppError("Payment is already confirmed", 400);
+    }
+
+    order.paymentStatus = "paid";
+    // Also move status to confirmed when payment verified
+    if (order.status === "pending") {
+      order.status = "confirmed";
+    }
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Payment confirmed successfully",
       data: order,
     });
   }

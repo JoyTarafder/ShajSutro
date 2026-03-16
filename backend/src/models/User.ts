@@ -29,6 +29,30 @@ const userSchema = new Schema<IUserDocument>(
       enum: ["user", "admin"],
       default: "user",
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationCode: {
+      type: String,
+      select: false,
+    },
+    verificationCodeExpiry: {
+      type: Date,
+      select: false,
+    },
+    passwordResetCode: {
+      type: String,
+      select: false,
+    },
+    passwordResetCodeExpiry: {
+      type: Date,
+      select: false,
+    },
   },
   { timestamps: true }
 );

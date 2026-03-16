@@ -147,6 +147,28 @@
   }
 }
 
+@keyframes shimmer-flow {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer-gradient {
+  background: linear-gradient(
+    90deg,
+    #7c3aed 0%,
+    #a855f7 20%,
+    #e879f9 40%,
+    #818cf8 60%,
+    #a78bfa 80%,
+    #7c3aed 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-flow 5s linear infinite;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;

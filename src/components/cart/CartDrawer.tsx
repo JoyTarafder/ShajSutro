@@ -131,7 +131,7 @@ export default function CartDrawer() {
 
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold text-charcoal-900">
-                          ${(item.product.price * item.quantity).toFixed(2)}
+                          ৳{(item.product.price * item.quantity).toFixed(2)}
                         </span>
                         <button
                           onClick={() =>
@@ -155,17 +155,17 @@ export default function CartDrawer() {
 
         {state.items.length > 0 && (
           <div className="px-7 py-6 border-t border-charcoal-100 space-y-4">
-            {subtotal < 150 && (
+            {/* Free shipping banner */}
+            {subtotal < 1200 ? (
               <div className="flex items-center gap-2.5 bg-accent-50 rounded-xl px-4 py-3">
                 <svg className="w-4 h-4 text-accent-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                 </svg>
                 <p className="text-xs text-accent-700">
-                  Add <strong>${(150 - subtotal).toFixed(2)}</strong> more for free shipping
+                  Add <strong>৳{(1200 - subtotal).toFixed(2)}</strong> more for free shipping
                 </p>
               </div>
-            )}
-            {subtotal >= 150 && (
+            ) : (
               <div className="flex items-center gap-2.5 bg-green-50 rounded-xl px-4 py-3">
                 <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
@@ -174,14 +174,15 @@ export default function CartDrawer() {
               </div>
             )}
 
+            {/* ── Order summary ── */}
             <div className="space-y-2.5">
               <div className="flex justify-between text-sm">
                 <span className="text-charcoal-400 font-light">Subtotal</span>
-                <span className="font-semibold text-charcoal-900">${subtotal.toFixed(2)}</span>
+                <span className="font-semibold text-charcoal-900">৳{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-charcoal-400 font-light">Shipping</span>
-                <span className="text-charcoal-400 font-light">{subtotal >= 150 ? "Free" : "Calculated at checkout"}</span>
+                <span className="text-charcoal-400 font-light">{subtotal >= 1200 ? "Free" : "Calculated at checkout"}</span>
               </div>
             </div>
 
@@ -191,7 +192,7 @@ export default function CartDrawer() {
                 onClick={closeCart}
                 className="btn-primary w-full text-center"
               >
-                Checkout &mdash; ${subtotal.toFixed(2)}
+                Checkout — ৳{subtotal.toFixed(2)}
               </Link>
               <Link
                 href="/cart"

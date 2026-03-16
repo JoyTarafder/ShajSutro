@@ -126,17 +126,32 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           <div className="flex items-center gap-2.5">
             <span className="text-sm font-semibold text-charcoal-900">
-              ${product.price}
+              ৳{product.price}
             </span>
             {product.originalPrice && (
               <span className="text-sm text-charcoal-300 line-through">
-                ${product.originalPrice}
+                ৳{product.originalPrice}
+              </span>
+            )}
+          </div>
+
+          {/* Stock + Orders row */}
+          <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+            <StockBadge stock={product.stock} inStock={product.inStock} />
+            {product.totalOrdered !== undefined && product.totalOrdered > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-charcoal-400 font-medium">
+                <svg className="w-3 h-3 text-charcoal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                {product.totalOrdered >= 1000
+                  ? `${(product.totalOrdered / 1000).toFixed(1)}k`
+                  : product.totalOrdered}+ ordered
               </span>
             )}
           </div>
 
           {product.colors.length > 1 && (
-            <div className="flex gap-1.5 pt-1">
+            <div className="flex gap-1.5 pt-0.5">
               {product.colors.slice(0, 4).map((color) => (
                 <div
                   key={color}
@@ -153,6 +168,41 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
     </div>
+  );
+}
+
+function StockBadge({ stock, inStock }: { stock?: number; inStock: boolean }) {
+  if (!inStock) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-500">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+        Out of stock
+      </span>
+    );
+  }
+  if (stock === undefined) return null;
+  if (stock === 0) return null;
+  if (stock <= 3) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-500">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+        Only {stock} left!
+      </span>
+    );
+  }
+  if (stock <= 10) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        {stock} left
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+      {stock} in stock
+    </span>
   );
 }
 

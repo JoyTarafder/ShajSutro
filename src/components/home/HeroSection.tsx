@@ -21,8 +21,8 @@ export default function HeroSection() {
               Dress with
               <br />
               <span className="relative inline-block mt-1">
-                <span className="relative z-10 text-accent-600">intention.</span>
-                <span className="absolute bottom-1 sm:bottom-2 left-0 right-0 h-3 sm:h-4 bg-accent-100/60 -z-0 rounded-full" />
+                <span className="relative z-10 shimmer-gradient">intention.</span>
+                <span className="absolute bottom-1 sm:bottom-2 left-0 right-0 h-3 sm:h-4 -z-0 rounded-full" style={{ background: "rgba(167,139,250,0.18)" }} />
               </span>
             </h1>
 

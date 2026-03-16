@@ -11,7 +11,7 @@ const faqs = [
   {
     question: "How long does shipping take?",
     answer:
-      "Standard shipping takes 3–5 business days. Express shipping (1–2 days) is available at checkout. Orders over $150 qualify for free standard shipping. You'll receive tracking information once your order is dispatched.",
+      "Standard shipping takes 3–5 business days. Express shipping (1–2 days) is available at checkout. Orders over ৳1200 qualify for free standard shipping. You'll receive tracking information once your order is dispatched.",
   },
   {
     question: "Are your products sustainably made?",

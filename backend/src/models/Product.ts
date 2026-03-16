@@ -65,6 +65,24 @@ const productSchema = new Schema<IProductDocument>(
       type: Boolean,
       default: true,
     },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+    isVisible: {
+      type: Boolean,
+      default: true,
+    },
+    stock: {
+      type: Number,
+      default: 0,
+      min: [0, "Stock cannot be negative"],
+    },
+    totalOrdered: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     tags: {
       type: [String],
       default: [],

@@ -19,6 +19,10 @@ interface Product {
   colors: string[];
   badge?: string;
   inStock: boolean;
+  isFeatured: boolean;
+  isVisible: boolean;
+  stock: number;
+  totalOrdered: number;
 }
 
 interface Category {
@@ -38,11 +42,15 @@ type ProductForm = {
   colors: string;
   badge: string;
   inStock: boolean;
+  isFeatured: boolean;
+  isVisible: boolean;
+  stock: string;
 };
 
 const EMPTY_FORM: ProductForm = {
   name: "", description: "", price: "", originalPrice: "",
-  category: "", images: "", sizes: "", colors: "", badge: "", inStock: true,
+  category: "", images: "", sizes: "", colors: "", badge: "",
+  inStock: true, isFeatured: false, isVisible: true, stock: "0",
 };
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -60,13 +68,31 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   );
 }
 
+// ─── Toggle Switch ────────────────────────────────────────────────────────────
+
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <label className="flex items-center gap-3 cursor-pointer select-none">
+      <div
+        onClick={onChange}
+        className={`relative w-10 rounded-full transition-colors flex-shrink-0 ${checked ? "bg-violet-600" : "bg-gray-300"}`}
+        style={{ height: "22px" }}
+      >
+        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
+      </div>
+      <span className="text-sm font-medium text-gray-700">{label}</span>
+    </label>
+  );
+}
+
 // ─── Product Modal ────────────────────────────────────────────────────────────
 
 function ProductModal({
-  product, categories, onClose, onSave,
+  product, categories, categoriesLoading, onClose, onSave,
 }: {
   product: Product | null;
   categories: Category[];
+  categoriesLoading: boolean;
   onClose: () => void;
   onSave: (data: Partial<Product>, id?: string) => Promise<void>;
 }) {
@@ -79,14 +105,18 @@ function ProductModal({
       images: product.images.join(", "),
       sizes: product.sizes.join(", "),
       colors: product.colors.join(", "),
-      badge: product.badge ?? "", inStock: product.inStock,
+      badge: product.badge ?? "",
+      inStock: product.inStock,
+      isFeatured: product.isFeatured ?? false,
+      isVisible: product.isVisible ?? true,
+      stock: String(product.stock ?? 0),
     } : EMPTY_FORM
   );
   const [saving, setSaving] = useState(false);
 
   const set = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setForm((p) => ({ ...p, [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value }));
+    const { name, value } = e.target;
+    setForm((p) => ({ ...p, [name]: value }));
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -103,6 +133,9 @@ function ProductModal({
         colors: form.colors.split(",").map((s) => s.trim()).filter(Boolean),
         badge: (form.badge || undefined) as Product["badge"],
         inStock: form.inStock,
+        isFeatured: form.isFeatured,
+        isVisible: form.isVisible,
+        stock: Number(form.stock) || 0,
       }, product?._id);
     } finally {
       setSaving(false);
@@ -112,7 +145,6 @@ function ProductModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg flex flex-col max-h-[92vh]">
-        {/* Header */}
         <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
           <div>
             <h2 className="text-lg font-bold text-gray-900">{product ? "Edit Product" : "New Product"}</h2>
@@ -123,31 +155,54 @@ function ProductModal({
           </button>
         </div>
 
-        {/* Body */}
         <form id="product-form" onSubmit={submit} className="flex-1 overflow-y-auto px-7 py-5">
           <div className="space-y-4">
             <Field label="Product Name *">
-              <input name="name" required value={form.name} onChange={set} placeholder="e.g. Classic Linen Shirt"
-                className="form-input" />
+              <input name="name" required value={form.name} onChange={set} placeholder="e.g. Classic Linen Shirt" className="form-input" />
             </Field>
             <Field label="Description *">
-              <textarea name="description" required rows={3} value={form.description} onChange={set}
-                className="form-input resize-none" />
+              <textarea name="description" required rows={3} value={form.description} onChange={set} className="form-input resize-none" />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Price ($) *">
-                <input name="price" type="number" min="0" step="0.01" required value={form.price} onChange={set}
-                  className="form-input" />
+                <input name="price" type="number" min="0" step="0.01" required value={form.price} onChange={set} className="form-input" />
               </Field>
               <Field label="Original Price ($)">
-                <input name="originalPrice" type="number" min="0" step="0.01" value={form.originalPrice} onChange={set}
-                  placeholder="Leave blank if none" className="form-input placeholder-gray-300" />
+                <input name="originalPrice" type="number" min="0" step="0.01" value={form.originalPrice} onChange={set} placeholder="Leave blank if none" className="form-input placeholder-gray-300" />
               </Field>
               <Field label="Category *">
-                <select name="category" required value={form.category} onChange={set} className="form-input bg-white">
-                  <option value="">Select…</option>
-                  {categories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                <select
+                  name="category"
+                  required
+                  value={form.category}
+                  onChange={set}
+                  disabled={categoriesLoading || categories.length === 0}
+                  className="form-input bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {categoriesLoading ? (
+                    <option value="">Loading categories…</option>
+                  ) : categories.length === 0 ? (
+                    <option value="">No categories found</option>
+                  ) : (
+                    <>
+                      <option value="">Select a category…</option>
+                      {categories.map((c) => (
+                        <option key={c._id} value={c._id}>{c.name}</option>
+                      ))}
+                    </>
+                  )}
                 </select>
+                {!categoriesLoading && categories.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    No categories yet.{" "}
+                    <a href="/admin/categories" target="_blank" className="underline font-semibold hover:text-amber-700">
+                      Create one first →
+                    </a>
+                  </p>
+                )}
               </Field>
               <Field label="Badge">
                 <select name="badge" value={form.badge} onChange={set} className="form-input bg-white">
@@ -159,8 +214,7 @@ function ProductModal({
               </Field>
             </div>
             <Field label="Image URLs (comma-separated) *">
-              <input name="images" required value={form.images} onChange={set}
-                placeholder="https://…, https://…" className="form-input placeholder-gray-300" />
+              <input name="images" required value={form.images} onChange={set} placeholder="https://…, https://…" className="form-input placeholder-gray-300" />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Sizes">
@@ -170,20 +224,29 @@ function ProductModal({
                 <input name="colors" value={form.colors} onChange={set} placeholder="Black, White" className="form-input placeholder-gray-300" />
               </Field>
             </div>
-            <label className="flex items-center gap-3 cursor-pointer select-none">
-              <div
-                onClick={() => setForm((p) => ({ ...p, inStock: !p.inStock }))}
-                className={`relative w-10 h-5.5 rounded-full transition-colors ${form.inStock ? "bg-blue-600" : "bg-gray-300"}`}
-                style={{ height: "22px" }}
-              >
-                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.inStock ? "translate-x-5" : "translate-x-0.5"}`} />
-              </div>
-              <span className="text-sm font-medium text-gray-700">In Stock</span>
-            </label>
+
+            <Field label="Stock Quantity">
+              <input
+                name="stock"
+                type="number"
+                min="0"
+                step="1"
+                value={form.stock}
+                onChange={set}
+                placeholder="0"
+                className="form-input"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">How many units are currently available</p>
+            </Field>
+
+            <div className="pt-1 space-y-3 border-t border-gray-100">
+              <Toggle checked={form.inStock} onChange={() => setForm((p) => ({ ...p, inStock: !p.inStock }))} label="In Stock" />
+              <Toggle checked={form.isFeatured} onChange={() => setForm((p) => ({ ...p, isFeatured: !p.isFeatured }))} label="Featured Product" />
+              <Toggle checked={form.isVisible} onChange={() => setForm((p) => ({ ...p, isVisible: !p.isVisible }))} label="Visible on Frontend" />
+            </div>
           </div>
         </form>
 
-        {/* Footer */}
         <div className="flex gap-3 px-7 py-5 border-t border-gray-100">
           <button type="button" onClick={onClose}
             className="flex-1 px-5 py-3 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
@@ -209,8 +272,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-// ─── Badge pill ───────────────────────────────────────────────────────────────
-
 const BADGE_STYLE: Record<string, string> = {
   "New": "bg-blue-50 text-blue-700",
   "Sale": "bg-rose-50 text-rose-700",
@@ -223,6 +284,7 @@ function ProductsContent() {
   const { apiFetch } = useAdminAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
@@ -243,7 +305,7 @@ function ProductsContent() {
         success: boolean;
         data: Product[];
         pagination: { total: number; pages: number };
-      }>(`/products?page=${page}&limit=12`);
+      }>(`/admin/products?page=${page}&limit=12`);
       setProducts(res.data);
       setPagination({ total: res.pagination.total, pages: res.pagination.pages });
     } catch (e: unknown) {
@@ -253,12 +315,20 @@ function ProductsContent() {
     }
   }, [apiFetch, page]);
 
-  useEffect(() => {
-    fetchProducts();
-    apiFetch<{ success: boolean; data: Category[] }>("/categories")
-      .then((r) => setCategories(r.data))
-      .catch(() => {});
-  }, [fetchProducts, apiFetch]);
+  const fetchCategories = useCallback(async () => {
+    setCategoriesLoading(true);
+    try {
+      const res = await apiFetch<{ success: boolean; data: Category[] }>("/categories");
+      setCategories(res.data);
+    } catch {
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }, [apiFetch]);
+
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   const handleSave = async (data: Partial<Product>, id?: string) => {
     try {
@@ -292,11 +362,23 @@ function ProductsContent() {
     }
   };
 
+  const toggleVisibility = async (product: Product) => {
+    try {
+      await apiFetch(`/products/${product._id}`, {
+        method: "PUT",
+        body: JSON.stringify({ isVisible: !product.isVisible }),
+      });
+      setProducts((prev) => prev.map((p) => p._id === product._id ? { ...p, isVisible: !p.isVisible } : p));
+      showToast("success", product.isVisible ? "Product hidden from store" : "Product visible on store");
+    } catch (e: unknown) {
+      showToast("error", e instanceof Error ? e.message : "Update failed");
+    }
+  };
+
   return (
     <div className="p-8 space-y-6">
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
-      {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-slate-400 font-medium">{pagination.total} products in store</p>
         <button
@@ -310,7 +392,6 @@ function ProductsContent() {
         </button>
       </div>
 
-      {/* Table Card */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-soft overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-24">
@@ -329,19 +410,19 @@ function ProductsContent() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
-                  {["Product", "Category", "Price", "Badge", "Stock", ""].map((h) => (
-                    <th key={h} className="text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.08em] px-6 py-4">{h}</th>
+                  {["Product", "Category", "Price", "Badge", "Stock Qty", "Orders", "Featured", "Visible", ""].map((h) => (
+                    <th key={h} className="text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.08em] px-5 py-4">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {products.map((p) => (
-                  <tr key={p._id} className="hover:bg-violet-50/20 transition-colors duration-100 group">
-                    <td className="px-6 py-4">
+                  <tr key={p._id} className={`hover:bg-violet-50/20 transition-colors duration-100 group ${!p.isVisible ? "opacity-60" : ""}`}>
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gray-100 relative flex-shrink-0">
+                        <div className="w-11 h-11 rounded-xl overflow-hidden bg-gray-100 relative flex-shrink-0">
                           {p.images[0] ? (
-                            <Image src={p.images[0]} alt={p.name} fill className="object-cover" sizes="48px" />
+                            <Image src={p.images[0]} alt={p.name} fill className="object-cover" sizes="44px" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-300">
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
@@ -349,36 +430,68 @@ function ProductsContent() {
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-900 max-w-[200px] truncate">{p.name}</p>
-                          <p className="text-xs text-slate-400 max-w-[200px] truncate">{p.description}</p>
+                          <p className="text-sm font-semibold text-slate-900 max-w-[180px] truncate">{p.name}</p>
+                          <p className="text-xs text-slate-400 max-w-[180px] truncate">{p.description}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-medium capitalize">
+                    <td className="px-5 py-4 text-sm text-slate-600 font-medium capitalize">
                       {typeof p.category === "object" ? p.category.name : p.category}
                     </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <span className="text-sm font-black text-slate-900">${p.price}</span>
-                        {p.originalPrice && (
-                          <span className="text-xs text-slate-400 line-through ml-1.5">${p.originalPrice}</span>
-                        )}
-                      </div>
+                    <td className="px-5 py-4">
+                      <span className="text-sm font-black text-slate-900">৳{p.price}</span>
+                      {p.originalPrice && (
+                        <span className="text-xs text-slate-400 line-through ml-1.5">৳{p.originalPrice}</span>
+                      )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4">
                       {p.badge ? (
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${BADGE_STYLE[p.badge] ?? "bg-gray-100 text-gray-600"}`}>
                           {p.badge}
                         </span>
                       ) : <span className="text-gray-300 text-sm">—</span>}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${p.inStock ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${p.inStock ? "bg-emerald-500" : "bg-red-500"}`} />
-                        {p.inStock ? "In Stock" : "Out"}
+                    {/* Stock Qty */}
+                    <td className="px-5 py-4">
+                      {(() => {
+                        const qty = p.stock ?? 0;
+                        if (!p.inStock) return <span className="text-xs font-semibold text-red-500">Out of stock</span>;
+                        if (qty === 0) return <span className="text-xs text-slate-400">—</span>;
+                        const color = qty <= 3 ? "text-red-600 font-bold" : qty <= 10 ? "text-amber-600 font-semibold" : "text-emerald-700 font-semibold";
+                        return <span className={`text-sm ${color}`}>{qty}</span>;
+                      })()}
+                    </td>
+                    {/* Total Ordered */}
+                    <td className="px-5 py-4">
+                      <span className="text-sm font-semibold text-slate-700">
+                        {(p.totalOrdered ?? 0).toLocaleString()}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    {/* Featured */}
+                    <td className="px-5 py-4">
+                      {p.isFeatured ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                          Yes
+                        </span>
+                      ) : <span className="text-gray-300 text-sm">—</span>}
+                    </td>
+                    {/* Visibility toggle */}
+                    <td className="px-5 py-4">
+                      <button
+                        onClick={() => toggleVisibility(p)}
+                        title={p.isVisible ? "Click to hide from store" : "Click to show on store"}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                          p.isVisible
+                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${p.isVisible ? "bg-emerald-500" : "bg-slate-400"}`} />
+                        {p.isVisible ? "Visible" : "Hidden"}
+                      </button>
+                    </td>
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                         <button
                           onClick={() => setModalProduct(p)}
@@ -414,17 +527,16 @@ function ProductsContent() {
         )}
       </div>
 
-      {/* Product Modal */}
       {modalProduct !== null && (
         <ProductModal
           product={modalProduct === "new" ? null : modalProduct}
           categories={categories}
+          categoriesLoading={categoriesLoading}
           onClose={() => setModalProduct(null)}
           onSave={handleSave}
         />
       )}
 
-      {/* Delete Confirm */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8">

@@ -10,7 +10,7 @@ export default function CartPage() {
   const { state, removeItem, updateQuantity, subtotal, totalItems } = useCart();
   const suggested = getBestSellers().slice(0, 4);
 
-  const shipping = subtotal >= 150 ? 0 : 9.99;
+  const shipping = subtotal >= 1200 ? 0 : 9.99;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
@@ -41,23 +41,23 @@ export default function CartPage() {
 
         <div className="grid lg:grid-cols-3 gap-14">
           <div className="lg:col-span-2">
-            {subtotal < 150 && (
+            {subtotal < 1200 && (
               <div className="mb-7 p-5 bg-accent-50 rounded-2xl border border-accent-100">
                 <div className="flex justify-between text-sm mb-2.5">
                   <span className="text-accent-700 font-medium">
-                    Add <strong>${(150 - subtotal).toFixed(2)}</strong> more for free shipping
+                    Add <strong>৳{(1200 - subtotal).toFixed(2)}</strong> more for free shipping
                   </span>
-                  <span className="text-accent-500 text-xs font-light">${subtotal.toFixed(2)} / $150</span>
+                  <span className="text-accent-500 text-xs font-light">৳{subtotal.toFixed(2)} / ৳1200</span>
                 </div>
                 <div className="h-1.5 bg-accent-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-accent-600 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min((subtotal / 150) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((subtotal / 1200) * 100, 100)}%` }}
                   />
                 </div>
               </div>
             )}
-            {subtotal >= 150 && (
+            {subtotal >= 1200 && (
               <div className="mb-7 p-5 bg-green-50 rounded-2xl flex items-center gap-2.5">
                 <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -92,11 +92,11 @@ export default function CartPage() {
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-base font-semibold text-charcoal-900">
-                          ${(item.product.price * item.quantity).toFixed(2)}
+                          ৳{(item.product.price * item.quantity).toFixed(2)}
                         </p>
                         {item.product.originalPrice && (
                           <p className="text-sm text-charcoal-300 line-through font-light">
-                            ${(item.product.originalPrice * item.quantity).toFixed(2)}
+                            ৳{(item.product.originalPrice * item.quantity).toFixed(2)}
                           </p>
                         )}
                       </div>
@@ -155,7 +155,7 @@ export default function CartPage() {
               <div className="space-y-3.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-charcoal-500 font-light">Subtotal ({totalItems} items)</span>
-                  <span className="font-medium text-charcoal-900">${subtotal.toFixed(2)}</span>
+                  <span className="font-medium text-charcoal-900">৳{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-charcoal-500 font-light">Shipping</span>
@@ -163,13 +163,13 @@ export default function CartPage() {
                     {shipping === 0 ? (
                       <span className="text-green-600">Free</span>
                     ) : (
-                      `$${shipping.toFixed(2)}`
+                      `৳${shipping.toFixed(2)}`
                     )}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-charcoal-500 font-light">Est. Tax (8%)</span>
-                  <span className="font-medium text-charcoal-900">${tax.toFixed(2)}</span>
+                  <span className="font-medium text-charcoal-900">৳{tax.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -188,7 +188,7 @@ export default function CartPage() {
 
               <div className="mt-6 pt-6 border-t border-warm-200 flex justify-between">
                 <span className="text-base font-semibold text-charcoal-950">Total</span>
-                <span className="text-xl font-bold text-charcoal-950">${total.toFixed(2)}</span>
+                <span className="text-xl font-bold text-charcoal-950">৳{total.toFixed(2)}</span>
               </div>
 
               <Link href="/checkout" className="btn-primary w-full text-center mt-6 block">

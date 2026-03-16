@@ -28,7 +28,7 @@ const CustomTooltip = ({
       <div className="bg-white border border-slate-100 rounded-2xl shadow-soft-md px-4 py-3">
         <p className="text-[11px] font-medium text-slate-400 mb-1">{label}</p>
         <p className="text-sm font-black text-slate-900">
-          ${payload[0].value.toFixed(2)}
+          ৳{payload[0].value.toFixed(2)}
         </p>
       </div>
     );
@@ -65,7 +65,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={(v: number) => `$${v}`}
+          tickFormatter={(v: number) => `৳${v}`}
           width={48}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#7c3aed", strokeWidth: 1, strokeDasharray: "4 4" }} />

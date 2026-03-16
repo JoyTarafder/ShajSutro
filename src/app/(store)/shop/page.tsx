@@ -140,7 +140,7 @@ function ShopContent() {
         <h3 className="text-[13px] font-semibold text-charcoal-900 mb-4 tracking-wide">
           Price Range
           <span className="ml-2 text-xs font-normal text-charcoal-400">
-            ${priceRange[0]} – ${priceRange[1]}
+            ৳{priceRange[0]} – ৳{priceRange[1]}
           </span>
         </h3>
         <input
@@ -153,8 +153,8 @@ function ShopContent() {
           className="w-full accent-charcoal-900 h-1.5 rounded-full"
         />
         <div className="flex justify-between text-xs text-charcoal-300 mt-1.5 font-light">
-          <span>$0</span>
-          <span>$500</span>
+          <span>৳0</span>
+          <span>৳500</span>
         </div>
       </div>
 

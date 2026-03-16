@@ -11,6 +11,7 @@ import productRoutes from "./routes/product.routes";
 import cartRoutes from "./routes/cart.routes";
 import orderRoutes from "./routes/order.routes";
 import adminRoutes from "./routes/admin.routes";
+import promoCodeRoutes from "./routes/promoCode.routes";
 
 // ─── Connect to MongoDB Atlas ─────────────────────────────────────────────────
 connectDB();
@@ -66,6 +67,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/promo-codes", promoCodeRoutes);
 
 // ─── Error handling ───────────────────────────────────────────────────────────
 app.use(notFound);

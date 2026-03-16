@@ -117,7 +117,7 @@ function DashboardContent() {
       key: "total",
       label: "Total",
       render: (row: RecentOrder) => (
-        <span className="font-black text-slate-900">${fmt(row.total)}</span>
+        <span className="font-black text-slate-900">৳{fmt(row.total)}</span>
       ),
     },
     {
@@ -187,7 +187,7 @@ function DashboardContent() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           title="Total Revenue"
-          value={`$${fmt(stats?.totalRevenue ?? 0)}`}
+          value={`৳${fmt(stats?.totalRevenue ?? 0)}`}
           accent="emerald"
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

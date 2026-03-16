@@ -6,7 +6,7 @@ const orderItemSchema = new Schema(
     product: {
       type: Schema.Types.ObjectId,
       ref: "Product",
-      required: true,
+      required: false,
     },
     name: { type: String, required: true },
     price: { type: Number, required: true },
@@ -54,13 +54,23 @@ const orderSchema = new Schema<IOrderDocument>(
     },
     paymentMethod: {
       type: String,
+      enum: ["bkash", "nagad", "rocket", "cod"],
       required: true,
-      default: "card",
     },
-    subtotal: { type: Number, required: true },
+    txnId: {
+      type: String,
+      default: "",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending_verification", "pending_delivery", "paid"],
+      default: "pending_verification",
+    },
+    subtotal:     { type: Number, required: true },
     shippingCost: { type: Number, required: true, default: 0 },
-    tax: { type: Number, required: true, default: 0 },
-    total: { type: Number, required: true },
+    tax:          { type: Number, required: true, default: 0 },
+    discount:     { type: Number, required: true, default: 0 },
+    total:        { type: Number, required: true },
     status: {
       type: String,
       enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],

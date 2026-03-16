@@ -1,52 +1,84 @@
 import { Response } from "express";
 import asyncHandler from "express-async-handler";
+import mongoose from "mongoose";
 import Order from "../models/Order";
-import Cart from "../models/Cart";
+import Product from "../models/Product";
 import { AppError } from "../middleware/error.middleware";
 import { AuthRequest, IShippingAddress } from "../types";
 
-// ─── POST /api/orders — place order from cart ─────────────────────────────────
+interface FrontendOrderItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  size: string;
+  color: string;
+  image: string;
+}
+
+// ─── POST /api/orders — place order ───────────────────────────────────────────
 
 export const placeOrder = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
-    const { shippingAddress, paymentMethod = "card" } = req.body as {
+    const {
+      shippingAddress,
+      paymentMethod,
+      txnId = "",
+      items: frontendItems,
+      discount = 0,
+    } = req.body as {
       shippingAddress: IShippingAddress;
-      paymentMethod?: string;
+      paymentMethod: "bkash" | "nagad" | "rocket" | "cod";
+      txnId?: string;
+      items: FrontendOrderItem[];
+      discount?: number;
     };
 
-    if (!shippingAddress) {
-      throw new AppError("Shipping address is required", 400);
-    }
+    if (!shippingAddress) throw new AppError("Shipping address is required", 400);
+    if (!paymentMethod)   throw new AppError("Payment method is required", 400);
+    if (!frontendItems || frontendItems.length === 0) throw new AppError("Order must contain at least one item", 400);
+    if (paymentMethod !== "cod" && !txnId.trim()) throw new AppError("Transaction ID is required for mobile payments", 400);
 
-    const cart = await Cart.findOne({ user: req.user?._id }).populate(
-      "items.product",
-      "name price images inStock"
-    );
+    // Build order items and validate stock (when product exists in DB)
+    const orderItems = [];
+    const stockOps: Promise<unknown>[] = [];
+    for (const item of frontendItems) {
+      const rawId = (item.productId ?? "").toString().trim();
 
-    if (!cart || cart.items.length === 0) {
-      throw new AppError("Cart is empty — add items before placing an order", 400);
-    }
+      const product = mongoose.isValidObjectId(rawId)
+        ? await Product.findById(rawId)
+        : // Fallbacks for when frontend uses a non-Mongo id (e.g. local dataset)
+          (await Product.findOne({ slug: rawId.toLowerCase() })) ??
+          (await Product.findOne({
+            name: { $regex: `^${rawId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" },
+          })) ??
+          (await Product.findOne({
+            name: { $regex: `^${(item.name ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" },
+          }));
 
-    interface PopulatedProduct {
-      _id: unknown;
-      name: string;
-      price: number;
-      images: string[];
-      inStock: boolean;
-    }
-
-    // Check all items are in stock
-    for (const item of cart.items) {
-      const product = item.product as unknown as PopulatedProduct;
-      if (!product.inStock) {
-        throw new AppError(`"${product.name}" is out of stock`, 400);
+      // If product isn't in DB, still allow order placement using frontend snapshot
+      // (useful when the storefront uses local/static products)
+      if (!product) {
+        orderItems.push({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color,
+          image: item.image ?? "",
+        });
+        continue;
       }
-    }
 
-    // Build order items from cart
-    const orderItems = cart.items.map((item) => {
-      const product = item.product as unknown as PopulatedProduct;
-      return {
+      if (!product.inStock) throw new AppError(`"${product.name}" is out of stock`, 400);
+      if (product.stock > 0 && item.quantity > product.stock) {
+        throw new AppError(
+          `Only ${product.stock} unit${product.stock !== 1 ? "s" : ""} of "${product.name}" available`,
+          400
+        );
+      }
+
+      orderItems.push({
         product: product._id,
         name: product.name,
         price: product.price,
@@ -54,32 +86,41 @@ export const placeOrder = asyncHandler(
         size: item.size,
         color: item.color,
         image: product.images[0] ?? "",
-      };
-    });
+      });
+
+      stockOps.push(
+        Product.findByIdAndUpdate(product._id, {
+          $inc: { stock: -item.quantity, totalOrdered: item.quantity },
+        })
+      );
+    }
 
     // Calculate totals
-    const subtotal = orderItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    const shippingCost = subtotal >= 150 ? 0 : 9.99;
-    const tax = parseFloat((subtotal * 0.08).toFixed(2));
-    const total = parseFloat((subtotal + shippingCost + tax).toFixed(2));
+    const subtotal     = parseFloat(orderItems.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2));
+    const shippingCost = subtotal >= 1200 ? 0 : 9.99;
+    const tax          = parseFloat((subtotal * 0.08).toFixed(2));
+    const discountAmt  = parseFloat(Math.min(discount, subtotal).toFixed(2));
+    const total        = parseFloat((subtotal + shippingCost + tax - discountAmt).toFixed(2));
+
+    const paymentStatus = paymentMethod === "cod" ? "pending_delivery" : "pending_verification";
 
     const order = await Order.create({
       user: req.user?._id,
       items: orderItems,
       shippingAddress,
       paymentMethod,
+      txnId: txnId.trim(),
+      paymentStatus,
       subtotal,
       shippingCost,
       tax,
+      discount: discountAmt,
       total,
       status: "pending",
     });
 
-    // Clear cart after order is placed
-    await Cart.findOneAndUpdate({ user: req.user?._id }, { items: [] });
+    // Decrement stock and increment totalOrdered (only for DB-backed products)
+    await Promise.all(stockOps);
 
     res.status(201).json({
       success: true,

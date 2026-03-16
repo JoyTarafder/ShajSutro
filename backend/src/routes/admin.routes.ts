@@ -1,28 +1,39 @@
 import { Router } from "express";
 import {
   getDashboardStats,
+  getAdminProducts,
   getAllUsers,
+  createUser,
   updateUser,
+  blockUser,
   deleteUser,
   getAllOrders,
+  getOrderDetails,
   updateOrderStatus,
+  confirmPayment,
 } from "../controllers/admin.controller";
 import { protect, adminOnly } from "../middleware/auth.middleware";
 
 const router = Router();
 
-// All admin routes require authentication + admin role
 router.use(protect, adminOnly);
 
 router.get("/stats", getDashboardStats);
 
+// Product management (admin view — includes hidden products)
+router.get("/products", getAdminProducts);
+
 // User management
 router.get("/users", getAllUsers);
+router.post("/users", createUser);
 router.put("/users/:id", updateUser);
+router.put("/users/:id/block", blockUser);
 router.delete("/users/:id", deleteUser);
 
 // Order management
 router.get("/orders", getAllOrders);
+router.get("/orders/:id", getOrderDetails);
 router.put("/orders/:id/status", updateOrderStatus);
+router.put("/orders/:id/confirm-payment", confirmPayment);
 
 export default router;
