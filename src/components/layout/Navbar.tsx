@@ -80,25 +80,36 @@ export default function Navbar() {
     return () => { document.body.style.overflow = ""; };
   }, [isMobileMenuOpen]);
 
+  const isActive = (href: string, label: string) => {
+    if (href === "/") return pathname === "/";
+    if (href.startsWith("/shop")) {
+      // Treat all /shop variants (men, women filters) as "Shop" for active state
+      return pathname.startsWith("/shop") && label === "Shop";
+    }
+    return pathname === href;
+  };
+
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-premium ${
-          isScrolled
-            ? "bg-white/90 backdrop-blur-2xl shadow-soft border-b border-charcoal-100/50"
-            : "bg-white/0"
+        className={`fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-charcoal-100/70 transition-all duration-500 ease-premium ${
+          isScrolled ? "shadow-soft" : ""
         }`}
       >
         <nav className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="flex items-center justify-between h-20">
             <Logo href="/" size="md" />
 
-            <div className="hidden md:flex items-center gap-10">
+            <div className="hidden md:flex items-center gap-8 lg:gap-10">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`nav-link ${pathname === link.href ? "active" : ""}`}
+                  className={`relative text-sm font-medium tracking-[0.04em] text-charcoal-400 hover:text-charcoal-950 transition-colors pb-1 ${
+                    isActive(link.href, link.label)
+                      ? "text-charcoal-950 after:absolute after:left-0 after:-bottom-0.5 after:h-[2px] after:w-6 after:bg-charcoal-950"
+                      : ""
+                  }`}
                 >
                   {link.label}
                 </Link>

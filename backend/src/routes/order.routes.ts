@@ -4,6 +4,7 @@ import {
   getMyOrders,
   getOrder,
   cancelOrder,
+  getOrderInvoice,
 } from "../controllers/order.controller";
 import { protect } from "../middleware/auth.middleware";
 
@@ -15,6 +16,7 @@ router.use(protect);
 router.post("/", placeOrder);
 router.get("/", getMyOrders);
 router.get("/:id", getOrder);
+router.get("/:id/invoice", getOrderInvoice);
 router.put("/:id/cancel", cancelOrder);
 
 export default router;

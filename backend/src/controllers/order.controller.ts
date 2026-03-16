@@ -1,6 +1,7 @@
 import { Response } from "express";
 import asyncHandler from "express-async-handler";
 import mongoose from "mongoose";
+import PDFDocument from "pdfkit";
 import Order from "../models/Order";
 import Product from "../models/Product";
 import { AppError } from "../middleware/error.middleware";
@@ -182,6 +183,123 @@ export const getOrder = asyncHandler(
       success: true,
       data: order,
     });
+  }
+);
+
+// ─── GET /api/orders/:id/invoice — invoice PDF ────────────────────────────────
+
+export const getOrderInvoice = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const order = await Order.findById(req.params.id).populate("user", "name email");
+    if (!order) throw new AppError("Order not found", 404);
+
+    // Only owner or admin
+    if (
+      order.user &&
+      order.user._id &&
+      order.user._id.toString() !== req.user?._id.toString() &&
+      req.user?.role !== "admin"
+    ) {
+      throw new AppError("Not authorized to download this invoice", 403);
+    }
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=invoice-${order._id.toString()}.pdf`
+    );
+
+    const doc = new PDFDocument({ margin: 50 });
+    doc.pipe(res);
+
+    // Header
+    doc
+      .fontSize(20)
+      .text("ShajSutro", { align: "left" })
+      .moveDown(0.5);
+    doc
+      .fontSize(10)
+      .fillColor("#666666")
+      .text(`Invoice ID: ${order._id.toString()}`)
+      .text(`Date: ${new Date(order.createdAt).toLocaleString()}`)
+      .moveDown();
+
+    // Billing / Shipping
+    const addr = order.shippingAddress as any;
+    doc
+      .fillColor("#000000")
+      .fontSize(12)
+      .text("Billing / Shipping To:", { underline: true })
+      .moveDown(0.3);
+    doc
+      .fontSize(10)
+      .text(`${addr.firstName ?? ""} ${addr.lastName ?? ""}`)
+      .text(addr.address ?? "")
+      .text(
+        [addr.city, addr.state, addr.zip].filter(Boolean).join(", ")
+      )
+      .text(addr.country ?? "")
+      .text(addr.phone ?? "")
+      .moveDown();
+
+    // Items table
+    doc
+      .fontSize(12)
+      .text("Items", { underline: true })
+      .moveDown(0.3);
+
+    const items = order.items as any[];
+    items.forEach((item) => {
+      doc
+        .fontSize(10)
+        .text(
+          `${item.name} (${item.size ?? ""} ${item.color ?? ""}) x${
+            item.quantity
+          }`,
+          { continued: true }
+        )
+        .text(
+          `  ৳${(item.price * item.quantity).toFixed(2)}`,
+          { align: "right" }
+        );
+    });
+
+    doc.moveDown();
+
+    // Totals
+    doc
+      .fontSize(10)
+      .text(`Subtotal: ৳${order.subtotal.toFixed(2)}`, { align: "right" });
+    doc.text(
+      `Shipping: ${order.shippingCost === 0 ? "Free" : `৳${order.shippingCost.toFixed(2)}`}`,
+      { align: "right" }
+    );
+    if (order.tax && order.tax > 0) {
+      doc.text(`Tax: ৳${order.tax.toFixed(2)}`, { align: "right" });
+    }
+    if (order.discount && order.discount > 0) {
+      doc.text(`Discount: -৳${order.discount.toFixed(2)}`, {
+        align: "right",
+      });
+    }
+    doc
+      .fontSize(12)
+      .text(`Total: ৳${order.total.toFixed(2)}`, {
+        align: "right",
+      })
+      .moveDown();
+
+    // Payment info
+    doc
+      .fontSize(10)
+      .fillColor("#666666")
+      .text(`Payment Method: ${order.paymentMethod.toUpperCase()}`);
+    if (order.txnId) {
+      doc.text(`TxnID: ${order.txnId}`);
+    }
+    doc.text(`Payment Status: ${order.paymentStatus}`);
+
+    doc.end();
   }
 );
 

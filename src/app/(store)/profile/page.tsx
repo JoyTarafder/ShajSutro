@@ -366,7 +366,7 @@ function OrderRow({ order, expanded = false }: { order: Order; expanded?: boolea
         </div>
       </div>
 
-      {expanded && open && (
+          {expanded && open && (
         <div className="mt-4 border-t border-charcoal-50 pt-4 space-y-3">
           {order.items.map((item, i) => (
             <div key={i} className="flex items-center gap-3">
@@ -381,9 +381,43 @@ function OrderRow({ order, expanded = false }: { order: Order; expanded?: boolea
               <p className="text-sm font-semibold text-charcoal-950 shrink-0">৳{(item.price * item.quantity).toLocaleString()}</p>
             </div>
           ))}
-          <div className="mt-3 pt-3 border-t border-charcoal-50 space-y-1 text-xs text-charcoal-500">
+          <div className="mt-3 pt-3 border-t border-charcoal-50 space-y-2 text-xs text-charcoal-500">
             {order.discount > 0 && <div className="flex justify-between"><span>Discount</span><span className="text-green-600 font-medium">−৳{order.discount.toFixed(2)}</span></div>}
             <div className="flex justify-between font-semibold text-charcoal-950"><span>Total</span><span>৳{order.total.toFixed(2)}</span></div>
+            <button
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem("token");
+                  if (!token) {
+                    window.location.href = "/login";
+                    return;
+                  }
+                  const res = await fetch(`${API}/api/orders/${order._id}/invoice`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  });
+                  if (!res.ok) {
+                    throw new Error("Failed to download invoice");
+                  }
+                  const blob = await res.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = `invoice-${order._id}.pdf`;
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                  window.URL.revokeObjectURL(url);
+                } catch {
+                  // Silently fail or show basic alert; avoid complex UI here
+                  alert("Could not download invoice. Please try again.");
+                }
+              }}
+              className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-charcoal-200 text-[11px] font-medium text-charcoal-700 hover:bg-charcoal-50"
+            >
+              Download Invoice
+            </button>
           </div>
         </div>
       )}
