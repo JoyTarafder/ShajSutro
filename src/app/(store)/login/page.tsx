@@ -4,7 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+import { getApiBase } from "@/lib/apiBase";
+
+const API = getApiBase();
 
 type View = "tabs" | "verify-email" | "forgot-password";
 

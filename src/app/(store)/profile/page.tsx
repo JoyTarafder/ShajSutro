@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+import { getApiBase } from "@/lib/apiBase";
+
+const API = getApiBase();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

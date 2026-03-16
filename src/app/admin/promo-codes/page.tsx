@@ -4,7 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+import { getApiBase } from "@/lib/apiBase";
+
+const API = getApiBase();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

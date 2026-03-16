@@ -5,7 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+import { getApiBase } from "@/lib/apiBase";
+
+const API = getApiBase();
 
 interface PromoResult {
   code: string;
