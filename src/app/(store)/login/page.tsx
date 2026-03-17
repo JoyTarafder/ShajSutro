@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getApiBase } from "@/lib/apiBase";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 
 const API = getApiBase();
 
@@ -27,9 +28,9 @@ export default function LoginPage() {
       <div className="w-full max-w-5xl">
         <div className="bg-[#f5fff9] rounded-[32px] shadow-soft border border-emerald-50 overflow-hidden flex flex-col md:flex-row">
           {/* Illustration / story side */}
-          <div className="md:w-1/2 bg-gradient-to-br from-emerald-50 via-emerald-50 to-emerald-100/70 px-8 md:px-10 py-9 md:py-12 flex flex-col justify-between">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.28em] uppercase text-emerald-500 mb-4">
+          <div className="md:w-1/2 bg-gradient-to-br from-emerald-50 via-emerald-50 to-emerald-100/70 px-8 md:px-10 py-7 md:py-9 flex flex-col">
+            <div className="mb-6 md:mb-7">
+              <p className="text-xs font-semibold tracking-[0.28em] uppercase text-emerald-500 mb-3">
                 ShajSutro
               </p>
               <h1 className="text-2xl md:text-[1.7rem] font-semibold tracking-tight text-emerald-950">
@@ -38,44 +39,146 @@ export default function LoginPage() {
                   delivered to your doorstep.
                 </span>
               </h1>
-              <p className="mt-4 text-sm leading-relaxed text-emerald-900/70 max-w-md">
+              <p className="mt-3 text-sm leading-relaxed text-emerald-900/70 max-w-md">
                 Sign in to continue your shopping journey or create a new
                 account in seconds. Save your favourites, track orders, and
                 enjoy a smoother checkout experience.
               </p>
             </div>
 
-            <div className="mt-8 space-y-4">
-              <div className="relative w-full aspect-[5/3] max-w-sm rounded-3xl bg-emerald-100/80 border border-emerald-200/60 overflow-hidden flex items-center justify-center">
-                <div className="absolute inset-0 opacity-70 bg-[radial-gradient(circle_at_0_0,#6ee7b7_0,transparent_55%),radial-gradient(circle_at_100%_100%,#22c55e_0,transparent_55%)]" />
-                <div className="relative flex items-center gap-4 px-6">
-                  <div className="h-16 w-16 rounded-2xl bg-white/90 flex items-center justify-center shadow-md">
-                    <svg
-                      className="w-8 h-8 text-emerald-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M3 3h18M5 7h14l-1.2 9.6a2 2 0 01-2 1.8H8.2a2 2 0 01-2-1.8L5 7zM10 11v4M14 11v4M9 21h.01M15 21h.01"
-                      />
-                    </svg>
+            <div className="flex-1 flex flex-col gap-4 md:gap-5">
+              <div className="relative w-full max-w-sm mx-auto md:mx-0 rounded-3xl overflow-hidden border border-emerald-200/60 shadow-soft h-52 md:h-60 bg-emerald-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://i.ibb.co.com/ZzsGXpZ4/b95765f1d5887ef61da112bba5690291-removebg-preview.png"
+                  alt="Customer studying with ShajSutro products"
+                  className="h-full w-full object-contain object-bottom"
+                />
+              </div>
+
+              <div className="w-full max-w-sm mx-auto md:mx-0">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-emerald-200/60 bg-white/55 px-3.5 py-3 shadow-soft/30">
+                    <div className="flex items-center gap-2">
+                      <span className="h-8 w-8 rounded-xl bg-emerald-100/70 border border-emerald-200/60 grid place-items-center">
+                        <svg
+                          className="w-4 h-4 text-emerald-700"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.6}
+                            d="M3 7.5h18l-1.5 12H4.5L3 7.5zM9 7.5V6a3 3 0 116 0v1.5"
+                          />
+                        </svg>
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-emerald-950 leading-tight">
+                          Secure checkout
+                        </p>
+                        <p className="text-[0.7rem] text-emerald-900/65 leading-tight mt-0.5">
+                          Easy, fast payments
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-emerald-900/80">
-                      Curated collections
-                    </p>
-                    <p className="text-[0.7rem] text-emerald-900/70 leading-snug max-w-[11rem]">
-                      Discover pieces picked just for your everyday moments.
-                    </p>
+
+                  <div className="rounded-2xl border border-emerald-200/60 bg-white/55 px-3.5 py-3 shadow-soft/30">
+                    <div className="flex items-center gap-2">
+                      <span className="h-8 w-8 rounded-xl bg-emerald-100/70 border border-emerald-200/60 grid place-items-center">
+                        <svg
+                          className="w-4 h-4 text-emerald-700"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.6}
+                            d="M20 7l-8 8-4-4M7 20h10"
+                          />
+                        </svg>
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-emerald-950 leading-tight">
+                          Quality checked
+                        </p>
+                        <p className="text-[0.7rem] text-emerald-900/65 leading-tight mt-0.5">
+                          Verified products
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-emerald-200/60 bg-white/55 px-3.5 py-3 shadow-soft/30">
+                    <div className="flex items-center gap-2">
+                      <span className="h-8 w-8 rounded-xl bg-emerald-100/70 border border-emerald-200/60 grid place-items-center">
+                        <svg
+                          className="w-4 h-4 text-emerald-700"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.6}
+                            d="M3.75 12h16.5M12 3.75v16.5"
+                          />
+                        </svg>
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-emerald-950 leading-tight">
+                          New arrivals
+                        </p>
+                        <p className="text-[0.7rem] text-emerald-900/65 leading-tight mt-0.5">
+                          Weekly drops
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-emerald-200/60 bg-white/55 px-3.5 py-3 shadow-soft/30">
+                    <div className="flex items-center gap-2">
+                      <span className="h-8 w-8 rounded-xl bg-emerald-100/70 border border-emerald-200/60 grid place-items-center">
+                        <svg
+                          className="w-4 h-4 text-emerald-700"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.6}
+                            d="M12 6v6l4 2"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.6}
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-emerald-950 leading-tight">
+                          Fast delivery
+                        </p>
+                        <p className="text-[0.7rem] text-emerald-900/65 leading-tight mt-0.5">
+                          Track your order
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-[0.7rem] text-emerald-900/70">
+              <div className="mt-auto flex items-center justify-between text-[0.7rem] text-emerald-900/70 pt-1">
                 <div className="flex gap-1.5">
                   <span className="h-1.5 w-4 rounded-full bg-emerald-500" />
                   <span className="h-1.5 w-3 rounded-full bg-emerald-300/80" />
@@ -273,6 +376,7 @@ function LoginForm({
     setError("");
     if (!email || !password) {
       setError("Please fill in all fields.");
+      notifyError("Please fill in all fields.");
       return;
     }
     setLoading(true);
@@ -285,9 +389,12 @@ function LoginForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Login failed");
       localStorage.setItem("token", data.token);
+      notifySuccess("Login successful!");
       router.push("/profile");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      notifyError(message);
     } finally {
       setLoading(false);
     }
@@ -397,10 +504,12 @@ function RegisterForm({
     setError("");
     if (!firstName || !email || !password) {
       setError("Please fill in all required fields.");
+      notifyError("Please fill in all required fields.");
       return;
     }
     if (!agreed) {
       setError("Please agree to the Terms of Service.");
+      notifyError("Please agree to the Terms of Service.");
       return;
     }
     setLoading(true);
@@ -413,9 +522,12 @@ function RegisterForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Registration failed");
+      notifyInfo("Account created. Please check your email for the verification code.");
       onRegistered(email);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      notifyError(message);
     } finally {
       setLoading(false);
     }
@@ -596,6 +708,7 @@ function FPStepEmail({
     setError("");
     if (!email) {
       setError("Please enter your email address.");
+      notifyError("Please enter your email address.");
       return;
     }
     setLoading(true);
@@ -607,9 +720,12 @@ function FPStepEmail({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Failed to send code");
+      notifySuccess("Reset code sent. Check your email.");
       onSent(email);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      notifyError(message);
     } finally {
       setLoading(false);
     }
@@ -778,6 +894,7 @@ function FPStepOTP({
       });
       setCooldown(60);
       setDigits(Array(6).fill(""));
+      notifySuccess("A new reset code has been sent.");
       inputRefs.current[0]?.focus();
     } catch {
       /* silent */
@@ -903,10 +1020,12 @@ function FPStepNewPassword({
     setError("");
     if (newPassword.length < 6) {
       setError("Password must be at least 6 characters.");
+      notifyError("Password must be at least 6 characters.");
       return;
     }
     if (newPassword !== confirm) {
       setError("Passwords do not match.");
+      notifyError("Passwords do not match.");
       return;
     }
     setLoading(true);
@@ -919,9 +1038,12 @@ function FPStepNewPassword({
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Reset failed");
       setSuccess("Password reset successfully! Redirecting to Sign In…");
+      notifySuccess("Password reset successfully!");
       setTimeout(onDone, 1500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      notifyError(message);
     } finally {
       setLoading(false);
     }
@@ -1106,6 +1228,7 @@ function VerifyEmailForm({
     const code = digits.join("");
     if (code.length < 6) {
       setError("Please enter the full 6-digit code.");
+      notifyError("Please enter the full 6-digit code.");
       return;
     }
     setLoading(true);
@@ -1119,12 +1242,15 @@ function VerifyEmailForm({
       if (!res.ok) throw new Error(data.message ?? "Verification failed");
       if (data.token) localStorage.setItem("token", data.token);
       setSuccess("Email verified! Redirecting…");
+      notifySuccess("Email verified successfully!");
       setTimeout(() => {
         onVerified();
         router.push("/profile");
       }, 1200);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      notifyError(message);
     } finally {
       setLoading(false);
     }
@@ -1142,11 +1268,14 @@ function VerifyEmailForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Failed to resend");
       setSuccess("A new code has been sent to your email.");
+      notifySuccess("Verification code resent.");
       setCooldown(60);
       setDigits(Array(6).fill(""));
       inputRefs.current[0]?.focus();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      notifyError(message);
     }
   }, [email]);
 

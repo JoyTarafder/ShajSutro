@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { products } from "@/data/products";
 import { Product, SortOption } from "@/types";
@@ -36,6 +36,13 @@ function ShopContent() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    setSelectedCategories(initialCategory ? [initialCategory] : []);
+    setSelectedSizes([]);
+    setPriceRange([0, 500]);
+    setSortBy("newest");
+  }, [initialCategory]);
 
   const filteredProducts = useMemo(() => {
     let filtered: Product[] = [...products];

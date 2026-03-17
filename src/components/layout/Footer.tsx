@@ -12,7 +12,7 @@ const footerLinks = {
   Company: [
     { label: "About Us", href: "/about" },
     { label: "Contact", href: "/contact" },
-    { label: "Careers", href: "#" },
+    { label: "Careers", href: "/careers" },
     { label: "Press", href: "#" },
   ],
   Support: [
@@ -22,9 +22,9 @@ const footerLinks = {
     { label: "Track Order", href: "#" },
   ],
   Legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Cookie Policy", href: "#" },
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms of Service", href: "/terms-of-service" },
+    { label: "Cookie Policy", href: "/cookie-policy" },
   ],
 };
 
@@ -92,20 +92,37 @@ export default function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-charcoal-200 flex flex-col sm:flex-row items-center justify-between gap-5">
-          <p className="text-sm text-charcoal-300 font-light">
+          <p className="text-sm text-charcoal-500 font-light">
             &copy; {new Date().getFullYear()} ShajSutro. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-charcoal-300 font-light">We accept:</span>
+            <span className="text-xs text-charcoal-500 font-light">We accept:</span>
             <div className="flex gap-2">
-              {["Visa", "MC", "PayPal", "Amex"].map((card) => (
-                <span
-                  key={card}
-                  className="px-2.5 py-1 text-[11px] font-medium text-charcoal-400 bg-white border border-charcoal-200 rounded-md"
+              <span className="px-2.5 py-1 text-[11px] font-bold text-white bg-[#E2136E] border border-[#E2136E]/60 rounded-md">
+                bKash
+              </span>
+              <span className="px-2.5 py-1 text-[11px] font-bold text-white bg-[#F05A28] border border-[#F05A28]/60 rounded-md">
+                Nagad
+              </span>
+              <span className="px-2.5 py-1 text-[11px] font-bold text-white bg-[#8C3494] border border-[#8C3494]/60 rounded-md">
+                Rocket
+              </span>
+              <span className="px-2.5 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-md inline-flex items-center gap-1.5">
+                <svg
+                  className="w-3.5 h-3.5 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  {card}
-                </span>
-              ))}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.6}
+                    d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                  />
+                </svg>
+                SSL Secure
+              </span>
             </div>
           </div>
         </div>

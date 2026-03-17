@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import Logo from "@/components/layout/Logo";
 
@@ -23,6 +23,7 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { totalItems, openCart } = useCart();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -80,13 +81,16 @@ export default function Navbar() {
     return () => { document.body.style.overflow = ""; };
   }, [isMobileMenuOpen]);
 
-  const isActive = (href: string, label: string) => {
+  const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
-    if (href.startsWith("/shop")) {
-      // Treat all /shop variants (men, women filters) as "Shop" for active state
-      return pathname.startsWith("/shop") && label === "Shop";
-    }
-    return pathname === href;
+    const [hrefPath, hrefQuery] = href.split("?");
+    if (!hrefQuery) return pathname === hrefPath;
+    const hrefParams = new URLSearchParams(hrefQuery);
+    const hrefCategory = hrefParams.get("category");
+    return (
+      pathname === hrefPath &&
+      searchParams?.get("category") === hrefCategory
+    );
   };
 
   return (
@@ -106,7 +110,7 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={`relative text-sm font-medium tracking-[0.04em] text-charcoal-400 hover:text-charcoal-950 transition-colors pb-1 ${
-                    isActive(link.href, link.label)
+                    isActive(link.href)
                       ? "text-charcoal-950 after:absolute after:left-0 after:-bottom-0.5 after:h-[2px] after:w-6 after:bg-charcoal-950"
                       : ""
                   }`}
@@ -239,7 +243,7 @@ export default function Navbar() {
               key={link.href}
               href={link.href}
               className={`block px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-300 ${
-                pathname === link.href
+                isActive(link.href)
                   ? "bg-charcoal-50 text-charcoal-950"
                   : "text-charcoal-600 hover:bg-charcoal-50 hover:text-charcoal-950"
               }`}

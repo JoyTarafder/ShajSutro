@@ -7,7 +7,6 @@ const categorySchema = new Schema<ICategoryDocument>(
       type: String,
       required: [true, "Category name is required"],
       trim: true,
-      unique: true,
       maxlength: [50, "Category name cannot exceed 50 characters"],
     },
     slug: {
@@ -24,8 +23,13 @@ const categorySchema = new Schema<ICategoryDocument>(
     image: {
       type: String,
     },
+    parent: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Category = mongoose.model<ICategoryDocument>("Category", categorySchema);

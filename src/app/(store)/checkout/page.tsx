@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 
 import { getApiBase } from "@/lib/apiBase";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 const API = getApiBase();
 
@@ -46,8 +47,11 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Invalid promo code");
       setPromoResult(data.data);
+      notifySuccess(`Promo applied: ${data.data?.code ?? promoInput.trim()}`);
     } catch (err: unknown) {
-      setPromoError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setPromoError(message);
+      notifyError(message);
     } finally {
       setPromoLoading(false);
     }
@@ -126,7 +130,9 @@ export default function CheckoutPage() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        setOrderError("You must be logged in to place an order. Please sign in.");
+        const message = "You must be logged in to place an order. Please sign in.";
+        setOrderError(message);
+        notifyError(message);
         setIsPlacingOrder(false);
         return;
       }
@@ -159,8 +165,12 @@ export default function CheckoutPage() {
       setPlacedOrderId(data.data._id ?? "");
       clearCart();
       setOrderPlaced(true);
+      notifySuccess("Order placed successfully!");
     } catch (err: unknown) {
-      setOrderError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      const message =
+        err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setOrderError(message);
+      notifyError(message);
     } finally {
       setIsPlacingOrder(false);
     }

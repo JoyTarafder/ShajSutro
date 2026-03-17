@@ -221,7 +221,7 @@ export const getOrderInvoice = asyncHandler(
       .fontSize(10)
       .fillColor("#666666")
       .text(`Invoice ID: ${order._id.toString()}`)
-      .text(`Date: ${new Date(order.createdAt).toLocaleString()}`)
+      .text(`Date: ${new Date(order.createdAt ?? Date.now()).toLocaleString()}`)
       .moveDown();
 
     // Billing / Shipping

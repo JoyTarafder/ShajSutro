@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CartDrawer from "@/components/cart/CartDrawer";
@@ -10,7 +11,9 @@ export default function StoreLayout({
 }) {
   return (
     <CartProvider>
-      <Navbar />
+      <Suspense fallback={null}>
+        <Navbar />
+      </Suspense>
       <main className="flex-1 pt-20">{children}</main>
       <Footer />
       <CartDrawer />

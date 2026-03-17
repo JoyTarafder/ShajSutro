@@ -36,6 +36,7 @@ export interface ICategory {
   slug: string;
   description?: string;
   image?: string;
+  parent?: Types.ObjectId;
   createdAt?: Date;
 }
 
@@ -153,6 +154,26 @@ export interface IPromoCode {
 }
 
 export interface IPromoCodeDocument extends IPromoCode, Document {
+  _id: Types.ObjectId;
+}
+
+// ─── Job ──────────────────────────────────────────────────────────────────────
+
+export interface IJob {
+  title: string;
+  department: string;
+  location: string;
+  type: "Full-time" | "Part-time" | "Contract" | "Internship";
+  level: "Junior" | "Mid" | "Senior" | "Lead";
+  description?: string;
+  deadline?: Date;
+  bullets: string[];
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IJobDocument extends IJob, Document {
   _id: Types.ObjectId;
 }
 
