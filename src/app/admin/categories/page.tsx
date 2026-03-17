@@ -528,13 +528,17 @@ function CategoriesContent() {
         });
         showToast("success", "Updated");
       } else {
-        const body = selectedParent
-          ? { ...data, parent: selectedParent._id }
-          : data;
-        await apiFetch("/categories", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
+        if (selectedParent) {
+          await apiFetch(`/categories/${selectedParent._id}/subcategories`, {
+            method: "POST",
+            body: JSON.stringify(data),
+          });
+        } else {
+          await apiFetch("/categories", {
+            method: "POST",
+            body: JSON.stringify(data),
+          });
+        }
         showToast("success", "Created");
       }
       setModal(null);

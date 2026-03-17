@@ -124,6 +124,42 @@ export const createCategory = asyncHandler(
   },
 );
 
+// ─── POST /api/categories/:id/subcategories (admin) ────────────────────────────
+// Creates a subcategory under an existing parent category.
+// Parent is derived from the URL param to avoid relying on request body.
+
+export const createSubcategory = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { name, description, image } = req.body as {
+      name: string;
+      description?: string;
+      image?: string;
+    };
+
+    if (!name) throw new AppError("Category name is required", 400);
+
+    const parentDoc = await Category.findById(req.params.id);
+    if (!parentDoc) throw new AppError("Parent category not found", 404);
+
+    let baseSlug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
+    baseSlug = `${parentDoc.slug}-${baseSlug}`;
+
+    const category = await Category.create({
+      name,
+      slug: baseSlug,
+      description,
+      image,
+      parent: parentDoc._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Subcategory created",
+      data: category,
+    });
+  },
+);
+
 // ─── PUT /api/categories/:id (admin) ──────────────────────────────────────────
 
 export const updateCategory = asyncHandler(
