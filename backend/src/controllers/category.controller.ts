@@ -11,6 +11,16 @@ export const getCategories = asyncHandler(
   async (_req: Request, res: Response): Promise<void> => {
     const categories = await Category.find({ parent: null }).sort({ name: 1 });
 
+    // fetch all subcategories for these root categories in one query
+    const rootIds = categories.map((c) => c._id);
+    const allSubs = await Category.find({ parent: { $in: rootIds } }).sort({ name: 1 });
+    const subsMap = new Map<string, typeof allSubs>();
+    for (const sub of allSubs) {
+      const key = String(sub.parent);
+      if (!subsMap.has(key)) subsMap.set(key, []);
+      subsMap.get(key)!.push(sub);
+    }
+
     const counts = await Product.aggregate([
       { $group: { _id: "$category", count: { $sum: 1 } } },
     ]);
@@ -21,6 +31,12 @@ export const getCategories = asyncHandler(
     const data = categories.map((cat) => ({
       ...cat.toObject(),
       productCount: countMap.get(String(cat._id)) ?? 0,
+      subcategories: (subsMap.get(String(cat._id)) ?? []).map((s) => ({
+        _id: s._id,
+        name: s.name,
+        slug: s.slug,
+        image: s.image,
+      })),
     }));
 
     res.status(200).json({ success: true, data });

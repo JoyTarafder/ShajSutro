@@ -47,12 +47,12 @@ function mapProduct(p: ApiProduct): Product {
   };
 }
 
-export default function BestSellerSection() {
+export default function NewArrivalsSection() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${getApiBase()}/api/products?badge=Best+Seller&limit=4`)
+    fetch(`${getApiBase()}/api/products?badge=New&limit=4`)
       .then((r) => r.json())
       .then((j) => {
         if (j.success) setProducts((j.data as ApiProduct[]).map(mapProduct));
@@ -64,21 +64,21 @@ export default function BestSellerSection() {
   if (!loading && products.length === 0) return null;
 
   return (
-    <section className="py-28 bg-warm-50">
+    <section className="py-28">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="flex items-end justify-between mb-14">
           <div>
-            <span className="section-label">Most Loved</span>
-            <h2 className="section-title">Best Sellers</h2>
+            <span className="section-label">Just In</span>
+            <h2 className="section-title">New Arrivals</h2>
             <p className="section-subtitle">
-              Our customers&apos; most-loved pieces
+              Fresh styles added to the collection
             </p>
           </div>
           <Link
-            href="/shop?badge=Best+Seller"
+            href="/shop?badge=New"
             className="hidden sm:flex items-center gap-2 text-sm font-medium text-charcoal-500 hover:text-charcoal-950 transition-colors duration-300 group"
           >
-            See all
+            View all
             <svg
               className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"
               fill="none"
@@ -110,8 +110,8 @@ export default function BestSellerSection() {
         )}
 
         <div className="mt-12 text-center sm:hidden">
-          <Link href="/shop?badge=Best+Seller" className="btn-secondary">
-            See All Best Sellers
+          <Link href="/shop?badge=New" className="btn-secondary">
+            View All New Arrivals
           </Link>
         </div>
       </div>

@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
-import Product from "../models/Product";
+import mongoose from "mongoose";
 import { AppError } from "../middleware/error.middleware";
+import Category from "../models/Category";
+import Product from "../models/Product";
 
 // ─── GET /api/products ────────────────────────────────────────────────────────
 
@@ -21,14 +23,23 @@ export const getProducts = asyncHandler(
 
     const filter: Record<string, unknown> = { isVisible: { $ne: false } };
 
-    if (category) filter.category = category;
+    if (category) {
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        filter.category = category;
+      } else {
+        const cat = await Category.findOne({ slug: category });
+        filter.category = cat ? cat._id : new mongoose.Types.ObjectId();
+      }
+    }
     if (badge) filter.badge = badge;
     if (inStock !== undefined) filter.inStock = inStock === "true";
 
     if (minPrice || maxPrice) {
       filter.price = {};
-      if (minPrice) (filter.price as Record<string, number>).$gte = Number(minPrice);
-      if (maxPrice) (filter.price as Record<string, number>).$lte = Number(maxPrice);
+      if (minPrice)
+        (filter.price as Record<string, number>).$gte = Number(minPrice);
+      if (maxPrice)
+        (filter.price as Record<string, number>).$lte = Number(maxPrice);
     }
 
     if (search) {
@@ -36,7 +47,7 @@ export const getProducts = asyncHandler(
     }
 
     const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(50, parseInt(limit ?? "12"));
+    const limitNum = Math.min(100, parseInt(limit ?? "12"));
     const skip = (pageNum - 1) * limitNum;
 
     const [products, total] = await Promise.all([
@@ -58,7 +69,7 @@ export const getProducts = asyncHandler(
         pages: Math.ceil(total / limitNum),
       },
     });
-  }
+  },
 );
 
 // ─── GET /api/products/:id ────────────────────────────────────────────────────
@@ -67,7 +78,7 @@ export const getProduct = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const product = await Product.findById(req.params.id).populate(
       "category",
-      "name slug"
+      "name slug",
     );
     if (!product) throw new AppError("Product not found", 404);
 
@@ -75,7 +86,7 @@ export const getProduct = asyncHandler(
       success: true,
       data: product,
     });
-  }
+  },
 );
 
 // ─── POST /api/products (admin) ───────────────────────────────────────────────
@@ -115,11 +126,17 @@ export const createProduct = asyncHandler(
     };
 
     if (!name || !description || !price || !category) {
-      throw new AppError("Name, description, price, and category are required", 400);
+      throw new AppError(
+        "Name, description, price, and category are required",
+        400,
+      );
     }
 
     const slug =
-      name.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "") +
+      name
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w-]/g, "") +
       "-" +
       Date.now();
 
@@ -148,7 +165,7 @@ export const createProduct = asyncHandler(
       message: "Product created",
       data: populated,
     });
-  }
+  },
 );
 
 // ─── PUT /api/products/:id (admin) ────────────────────────────────────────────
@@ -174,7 +191,10 @@ export const updateProduct = asyncHandler(
 
     if (updates.name) {
       (updates as Record<string, unknown>).slug =
-        updates.name.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "") +
+        updates.name
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^\w-]/g, "") +
         "-" +
         Date.now();
     }
@@ -191,7 +211,7 @@ export const updateProduct = asyncHandler(
       message: "Product updated",
       data: product,
     });
-  }
+  },
 );
 
 // ─── DELETE /api/products/:id (admin) ─────────────────────────────────────────
@@ -206,5 +226,5 @@ export const deleteProduct = asyncHandler(
       success: true,
       message: "Product deleted",
     });
-  }
+  },
 );

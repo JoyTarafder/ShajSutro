@@ -2,11 +2,61 @@
 
 import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { products } from "@/data/products";
 import { Product, SortOption } from "@/types";
 import ProductCard from "@/components/product/ProductCard";
+import { getApiBase } from "@/lib/apiBase";
 
-const CATEGORIES = ["men", "women", "shoes", "accessories"];
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ApiProduct {
+  _id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  category: { _id: string; name: string; slug: string } | string;
+  images: string[];
+  sizes: string[];
+  colors: string[];
+  badge?: "New" | "Sale" | "Best Seller";
+  description: string;
+  rating: number;
+  reviews: number;
+  inStock: boolean;
+  stock?: number;
+  totalOrdered?: number;
+  tags?: string[];
+}
+
+interface NavCategory {
+  _id: string;
+  name: string;
+  slug: string;
+  productCount: number;
+}
+
+function mapProduct(p: ApiProduct): Product {
+  const catSlug =
+    typeof p.category === "object" ? p.category.slug : p.category;
+  return {
+    id: p._id,
+    name: p.name,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    category: catSlug,
+    images: p.images,
+    sizes: p.sizes,
+    colors: p.colors,
+    badge: p.badge,
+    description: p.description,
+    rating: p.rating,
+    reviews: p.reviews,
+    inStock: p.inStock,
+    stock: p.stock,
+    totalOrdered: p.totalOrdered,
+    tags: p.tags,
+  };
+}
+
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "newest", label: "Newest" },
@@ -16,72 +66,107 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "popular", label: "Most Popular" },
 ];
 
+// ─── Page wrapper ─────────────────────────────────────────────────────────────
+
 export default function ShopPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-charcoal-200 border-t-charcoal-900 rounded-full animate-spin" /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-charcoal-200 border-t-charcoal-900 rounded-full animate-spin" />
+        </div>
+      }
+    >
       <ShopContent />
     </Suspense>
   );
 }
+
+// ─── Main content ─────────────────────────────────────────────────────────────
 
 function ShopContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") ?? "";
   const initialBadge = searchParams.get("badge") ?? "";
 
+  // ── Filter state ──
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     initialCategory ? [initialCategory] : []
   );
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
+  // ── Data state ──
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<NavCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Reset filters when URL category/badge changes
   useEffect(() => {
     setSelectedCategories(initialCategory ? [initialCategory] : []);
     setSelectedSizes([]);
-    setPriceRange([0, 500]);
+    setPriceRange([0, 5000]);
     setSortBy("newest");
-  }, [initialCategory]);
+  }, [initialCategory, initialBadge]);
 
+  // Fetch categories for the filter panel
+  useEffect(() => {
+    fetch(`${getApiBase()}/api/categories`)
+      .then((r) => r.json())
+      .then((j) => { if (j.success) setCategories(j.data); })
+      .catch(() => {});
+  }, []);
+
+  // Fetch products whenever the badge URL param changes (category filtering is client-side)
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ limit: "100" });
+    if (initialBadge) params.set("badge", initialBadge);
+
+    fetch(`${getApiBase()}/api/products?${params.toString()}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success) setAllProducts((j.data as ApiProduct[]).map(mapProduct));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [initialBadge]);
+
+  // ── Client-side filtering + sorting ──
   const filteredProducts = useMemo(() => {
-    let filtered: Product[] = [...products];
-
-    if (initialBadge) {
-      filtered = filtered.filter((p) => p.badge === initialBadge);
-    }
+    let list = [...allProducts];
 
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter((p) => selectedCategories.includes(p.category));
+      list = list.filter((p) => selectedCategories.includes(p.category));
     }
 
     if (selectedSizes.length > 0) {
-      filtered = filtered.filter((p) =>
-        p.sizes.some((s) => selectedSizes.includes(s))
-      );
+      list = list.filter((p) => p.sizes.some((s) => selectedSizes.includes(s)));
     }
 
-    filtered = filtered.filter(
+    list = list.filter(
       (p) => p.price >= priceRange[0] && p.price <= priceRange[1]
     );
 
     switch (sortBy) {
       case "price-asc":
-        filtered.sort((a, b) => a.price - b.price);
+        list.sort((a, b) => a.price - b.price);
         break;
       case "price-desc":
-        filtered.sort((a, b) => b.price - a.price);
+        list.sort((a, b) => b.price - a.price);
         break;
       case "rating":
-        filtered.sort((a, b) => b.rating - a.rating);
+        list.sort((a, b) => b.rating - a.rating);
         break;
       case "popular":
-        filtered.sort((a, b) => b.reviews - a.reviews);
+        list.sort((a, b) => (b.totalOrdered ?? 0) - (a.totalOrdered ?? 0));
         break;
     }
 
-    return filtered;
-  }, [selectedCategories, selectedSizes, priceRange, sortBy, initialBadge]);
+    return list;
+  }, [allProducts, selectedCategories, selectedSizes, priceRange, sortBy]);
 
   const toggleCategory = (cat: string) => {
     setSelectedCategories((prev) =>
@@ -98,7 +183,7 @@ function ShopContent() {
   const clearFilters = () => {
     setSelectedCategories([]);
     setSelectedSizes([]);
-    setPriceRange([0, 500]);
+    setPriceRange([0, 5000]);
     setSortBy("newest");
   };
 
@@ -106,42 +191,53 @@ function ShopContent() {
     selectedCategories.length > 0 ||
     selectedSizes.length > 0 ||
     priceRange[0] > 0 ||
-    priceRange[1] < 500;
+    priceRange[1] < 5000;
 
+  // Derive max price from current products for the range slider
+  const maxPrice = useMemo(
+    () => Math.max(5000, ...allProducts.map((p) => p.price)),
+    [allProducts]
+  );
+
+  // ── Filter panel (shared desktop + mobile) ──
   const FiltersPanel = () => (
     <div className="space-y-9">
-      <div>
-        <h3 className="text-[13px] font-semibold text-charcoal-900 mb-4 tracking-wide">Category</h3>
-        <div className="space-y-2.5">
-          {CATEGORIES.map((cat) => (
-            <label key={cat} className="flex items-center gap-3 cursor-pointer group">
-              <div
-                className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                  selectedCategories.includes(cat)
-                    ? "bg-charcoal-950 border-charcoal-950"
-                    : "border-charcoal-300 group-hover:border-charcoal-400"
-                }`}
-                onClick={() => toggleCategory(cat)}
-              >
-                {selectedCategories.includes(cat) && (
-                  <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-              <span
-                onClick={() => toggleCategory(cat)}
-                className="text-sm text-charcoal-500 capitalize group-hover:text-charcoal-900 transition-colors duration-200 font-light"
-              >
-                {cat}
-              </span>
-              <span className="ml-auto text-xs text-charcoal-300">
-                {products.filter((p) => p.category === cat).length}
-              </span>
-            </label>
-          ))}
+      {categories.length > 0 && !initialBadge && (
+        <div>
+          <h3 className="text-[13px] font-semibold text-charcoal-900 mb-4 tracking-wide">
+            Category
+          </h3>
+          <div className="space-y-2.5">
+            {categories.map((cat) => (
+              <label key={cat._id} className="flex items-center gap-3 cursor-pointer group">
+                <div
+                  className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                    selectedCategories.includes(cat.slug)
+                      ? "bg-charcoal-950 border-charcoal-950"
+                      : "border-charcoal-300 group-hover:border-charcoal-400"
+                  }`}
+                  onClick={() => toggleCategory(cat.slug)}
+                >
+                  {selectedCategories.includes(cat.slug) && (
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <span
+                  onClick={() => toggleCategory(cat.slug)}
+                  className="text-sm text-charcoal-500 group-hover:text-charcoal-900 transition-colors duration-200 font-light"
+                >
+                  {cat.name}
+                </span>
+                <span className="ml-auto text-xs text-charcoal-300">
+                  {cat.productCount}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <h3 className="text-[13px] font-semibold text-charcoal-900 mb-4 tracking-wide">
@@ -153,20 +249,22 @@ function ShopContent() {
         <input
           type="range"
           min={0}
-          max={500}
-          step={10}
+          max={maxPrice}
+          step={50}
           value={priceRange[1]}
           onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
           className="w-full accent-charcoal-900 h-1.5 rounded-full"
         />
         <div className="flex justify-between text-xs text-charcoal-300 mt-1.5 font-light">
           <span>৳0</span>
-          <span>৳500</span>
+          <span>৳{maxPrice}</span>
         </div>
       </div>
 
       <div>
-        <h3 className="text-[13px] font-semibold text-charcoal-900 mb-4 tracking-wide">Size</h3>
+        <h3 className="text-[13px] font-semibold text-charcoal-900 mb-4 tracking-wide">
+          Size
+        </h3>
         <div className="flex flex-wrap gap-2">
           {SIZES.map((size) => (
             <button
@@ -195,14 +293,22 @@ function ShopContent() {
     </div>
   );
 
+  const headingText = initialBadge
+    ? initialBadge
+    : initialCategory
+    ? initialCategory.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+    : "All Products";
+
   return (
     <div className="min-h-screen bg-white">
       <div className="bg-warm-50 border-b border-charcoal-100 py-14">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <h1 className="text-4xl font-semibold text-charcoal-950 tracking-tight">
-            {initialBadge ? initialBadge : initialCategory ? initialCategory.charAt(0).toUpperCase() + initialCategory.slice(1) : "All Products"}
+            {headingText}
           </h1>
-          <p className="text-charcoal-400 mt-2 text-sm font-light">{filteredProducts.length} products</p>
+          <p className="text-charcoal-400 mt-2 text-sm font-light">
+            {loading ? "Loading…" : `${filteredProducts.length} products`}
+          </p>
         </div>
       </div>
 
@@ -276,7 +382,17 @@ function ShopContent() {
               </div>
             )}
 
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-10 sm:gap-x-7">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="space-y-3">
+                    <div className="aspect-[3/4] rounded-2xl bg-charcoal-100 animate-pulse" />
+                    <div className="h-4 bg-charcoal-100 rounded animate-pulse w-3/4" />
+                    <div className="h-3 bg-charcoal-100 rounded animate-pulse w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-28 text-center">
                 <div className="w-16 h-16 rounded-full bg-charcoal-50 flex items-center justify-center mb-5">
                   <svg className="w-7 h-7 text-charcoal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

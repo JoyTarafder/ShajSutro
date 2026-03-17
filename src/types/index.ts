@@ -3,7 +3,7 @@ export interface Product {
   name: string;
   price: number;
   originalPrice?: number;
-  category: "men" | "women" | "shoes" | "accessories";
+  category: string;
   images: string[];
   sizes: string[];
   colors: string[];
@@ -31,8 +31,14 @@ export interface CartState {
 
 export type CartAction =
   | { type: "ADD_ITEM"; payload: CartItem }
-  | { type: "REMOVE_ITEM"; payload: { id: string; size: string; color: string } }
-  | { type: "UPDATE_QUANTITY"; payload: { id: string; size: string; color: string; quantity: number } }
+  | {
+      type: "REMOVE_ITEM";
+      payload: { id: string; size: string; color: string };
+    }
+  | {
+      type: "UPDATE_QUANTITY";
+      payload: { id: string; size: string; color: string; quantity: number };
+    }
   | { type: "CLEAR_CART" }
   | { type: "OPEN_CART" }
   | { type: "CLOSE_CART" };
@@ -53,7 +59,12 @@ export interface Review {
   date: string;
 }
 
-export type SortOption = "newest" | "price-asc" | "price-desc" | "rating" | "popular";
+export type SortOption =
+  | "newest"
+  | "price-asc"
+  | "price-desc"
+  | "rating"
+  | "popular";
 
 export interface FilterState {
   category: string[];
