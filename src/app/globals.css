@@ -7,6 +7,7 @@
     --foreground-rgb: 26, 26, 31;
     --background-start-rgb: 255, 255, 255;
     --background-end-rgb: 250, 248, 245;
+    --font-inter: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
   * {
