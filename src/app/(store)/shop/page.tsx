@@ -180,6 +180,20 @@ function ShopContent() {
     );
   };
 
+  const setPriceMin = (min: number) => {
+    setPriceRange(([curMin, curMax]) => {
+      const nextMin = Math.max(0, Math.min(min, curMax));
+      return [nextMin, curMax];
+    });
+  };
+
+  const setPriceMax = (max: number) => {
+    setPriceRange(([curMin, curMax]) => {
+      const nextMax = Math.min(maxPrice, Math.max(max, curMin));
+      return [curMin, nextMax];
+    });
+  };
+
   const clearFilters = () => {
     setSelectedCategories([]);
     setSelectedSizes([]);
@@ -199,6 +213,11 @@ function ShopContent() {
     [allProducts]
   );
 
+  const activeFiltersCount =
+    selectedCategories.length +
+    selectedSizes.length +
+    (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0);
+
   // ── Filter panel (shared desktop + mobile) ──
   const FiltersPanel = () => (
     <div className="space-y-9">
@@ -209,31 +228,37 @@ function ShopContent() {
           </h3>
           <div className="space-y-2.5">
             {categories.map((cat) => (
-              <label key={cat._id} className="flex items-center gap-3 cursor-pointer group">
-                <div
+              <button
+                key={cat._id}
+                type="button"
+                onClick={() => toggleCategory(cat.slug)}
+                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all duration-200 ${
+                  selectedCategories.includes(cat.slug)
+                    ? "border-charcoal-900 bg-charcoal-950/5"
+                    : "border-transparent hover:border-charcoal-200 hover:bg-charcoal-50/60"
+                }`}
+              >
+                <span
                   className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
                     selectedCategories.includes(cat.slug)
                       ? "bg-charcoal-950 border-charcoal-950"
-                      : "border-charcoal-300 group-hover:border-charcoal-400"
+                      : "border-charcoal-300"
                   }`}
-                  onClick={() => toggleCategory(cat.slug)}
+                  aria-hidden="true"
                 >
                   {selectedCategories.includes(cat.slug) && (
                     <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
-                </div>
-                <span
-                  onClick={() => toggleCategory(cat.slug)}
-                  className="text-sm text-charcoal-500 group-hover:text-charcoal-900 transition-colors duration-200 font-light"
-                >
+                </span>
+                <span className="text-sm text-charcoal-600 font-light">
                   {cat.name}
                 </span>
                 <span className="ml-auto text-xs text-charcoal-300">
                   {cat.productCount}
                 </span>
-              </label>
+              </button>
             ))}
           </div>
         </div>
@@ -246,15 +271,55 @@ function ShopContent() {
             ৳{priceRange[0]} – ৳{priceRange[1]}
           </span>
         </h3>
-        <input
-          type="range"
-          min={0}
-          max={maxPrice}
-          step={50}
-          value={priceRange[1]}
-          onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-          className="w-full accent-charcoal-900 h-1.5 rounded-full"
-        />
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label className="block text-[11px] text-charcoal-400 font-light mb-1.5">
+              Min
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={priceRange[1]}
+              value={priceRange[0]}
+              onChange={(e) => setPriceMin(Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-charcoal-200 bg-white text-sm text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-accent-400/30"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] text-charcoal-400 font-light mb-1.5">
+              Max
+            </label>
+            <input
+              type="number"
+              min={priceRange[0]}
+              max={maxPrice}
+              value={priceRange[1]}
+              onChange={(e) => setPriceMax(Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-charcoal-200 bg-white text-sm text-charcoal-900 focus:outline-none focus:ring-2 focus:ring-accent-400/30"
+            />
+          </div>
+        </div>
+
+        <div className="relative h-8">
+          <input
+            type="range"
+            min={0}
+            max={maxPrice}
+            step={50}
+            value={priceRange[0]}
+            onChange={(e) => setPriceMin(Number(e.target.value))}
+            className="absolute inset-0 w-full accent-charcoal-900 h-1.5 rounded-full pointer-events-auto"
+          />
+          <input
+            type="range"
+            min={0}
+            max={maxPrice}
+            step={50}
+            value={priceRange[1]}
+            onChange={(e) => setPriceMax(Number(e.target.value))}
+            className="absolute inset-0 w-full accent-charcoal-900 h-1.5 rounded-full pointer-events-auto"
+          />
+        </div>
         <div className="flex justify-between text-xs text-charcoal-300 mt-1.5 font-light">
           <span>৳0</span>
           <span>৳{maxPrice}</span>
@@ -265,7 +330,7 @@ function ShopContent() {
         <h3 className="text-[13px] font-semibold text-charcoal-900 mb-4 tracking-wide">
           Size
         </h3>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {SIZES.map((size) => (
             <button
               key={size}
@@ -332,7 +397,7 @@ function ShopContent() {
                 Filters
                 {hasActiveFilters && (
                   <span className="w-4 h-4 rounded-full bg-charcoal-950 text-white text-[10px] flex items-center justify-center">
-                    !
+                    {Math.min(9, activeFiltersCount)}
                   </span>
                 )}
               </button>
@@ -438,12 +503,21 @@ function ShopContent() {
               <FiltersPanel />
             </div>
             <div className="px-7 py-5 border-t border-charcoal-100">
-              <button
-                onClick={() => setIsMobileFiltersOpen(false)}
-                className="btn-primary w-full"
-              >
-                View {filteredProducts.length} Products
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={clearFilters}
+                  disabled={!hasActiveFilters}
+                  className="btn-secondary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => setIsMobileFiltersOpen(false)}
+                  className="btn-primary flex-1"
+                >
+                  Apply ({filteredProducts.length})
+                </button>
+              </div>
             </div>
           </div>
         </>

@@ -1,7 +1,52 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import { getApiBase } from "@/lib/apiBase";
+
+type HeroStats = {
+  productsCount: number;
+  customersCount: number;
+  avgRating: number;
+};
+
+function formatCompact(n: number) {
+  if (!Number.isFinite(n)) return "0";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M+`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K+`;
+  return `${n}+`;
+}
 
 export default function HeroSection() {
+  const [stats, setStats] = useState<HeroStats | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`${getApiBase()}/api/stats/hero`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (!alive) return;
+        if (json?.success && json?.data) setStats(json.data as HeroStats);
+      })
+      .catch(() => {})
+      .finally(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const statItems = useMemo(() => {
+    const products = stats ? formatCompact(stats.productsCount) : "—";
+    const customers = stats ? formatCompact(stats.customersCount) : "—";
+    const rating = stats ? `${Math.max(0, Math.min(5, stats.avgRating)).toFixed(1)}★` : "—";
+    return [
+      { value: products, label: "Products" },
+      { value: customers, label: "Customers" },
+      { value: rating, label: "Rating" },
+    ];
+  }, [stats]);
+
   return (
     <section className="relative min-h-screen flex items-center bg-warm-50 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(90,127,160,0.04),transparent_70%)]" />
@@ -13,7 +58,7 @@ export default function HeroSection() {
             <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/80 backdrop-blur-sm rounded-full border border-charcoal-100 shadow-soft">
               <span className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse" />
               <span className="text-[11px] font-semibold text-charcoal-500 tracking-[0.15em] uppercase">
-                Spring / Summer 2025
+                Spring / Summer 2026
               </span>
             </div>
 
@@ -41,11 +86,7 @@ export default function HeroSection() {
             </div>
 
             <div className="flex gap-12 pt-8 border-t border-charcoal-100">
-              {[
-                { value: "500+", label: "Products" },
-                { value: "50K+", label: "Customers" },
-                { value: "4.9★", label: "Rating" },
-              ].map((stat) => (
+              {statItems.map((stat) => (
                 <div key={stat.label}>
                   <p className="text-2xl font-semibold text-charcoal-950 tracking-tight">{stat.value}</p>
                   <p className="text-sm text-charcoal-400 mt-0.5 font-light">{stat.label}</p>

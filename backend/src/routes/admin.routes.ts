@@ -11,6 +11,8 @@ import {
   getOrderDetails,
   updateOrderStatus,
   confirmPayment,
+  getAllContactMessages,
+  markContactMessageRead,
 } from "../controllers/admin.controller";
 import { protect, adminOnly } from "../middleware/auth.middleware";
 
@@ -35,5 +37,9 @@ router.get("/orders", getAllOrders);
 router.get("/orders/:id", getOrderDetails);
 router.put("/orders/:id/status", updateOrderStatus);
 router.put("/orders/:id/confirm-payment", confirmPayment);
+
+// Contact messages
+router.get("/messages", getAllContactMessages);
+router.put("/messages/:id/read", markContactMessageRead);
 
 export default router;

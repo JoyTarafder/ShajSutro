@@ -99,8 +99,8 @@ export interface IOrderItem {
   name: string;
   price: number;
   quantity: number;
-  size: string;
-  color: string;
+  size?: string;
+  color?: string;
   image: string;
 }
 

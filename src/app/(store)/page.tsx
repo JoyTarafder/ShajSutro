@@ -1,6 +1,5 @@
 import BestSellerSection from "@/components/home/BestSellerSection";
 import CategorySection from "@/components/home/CategorySection";
-import FAQSection from "@/components/home/FAQSection";
 import HeroSection from "@/components/home/HeroSection";
 import NewArrivalsSection from "@/components/home/NewArrivalsSection";
 import NewsletterSection from "@/components/home/NewsletterSection";
@@ -107,7 +106,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <FAQSection />
       <NewsletterSection />
     </>
   );

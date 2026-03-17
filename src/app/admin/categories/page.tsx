@@ -2,6 +2,7 @@
 
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import { useAdminAuth } from "@/context/AdminAuthContext";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -320,12 +321,14 @@ function CategoryCard({
   onEdit,
   onDelete,
   onManageSub,
+  onManageProducts,
 }: {
   cat: Category;
   showSubBtn: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onManageSub?: () => void;
+  onManageProducts?: () => void;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-soft overflow-hidden group hover:shadow-md transition-shadow">
@@ -392,6 +395,27 @@ function CategoryCard({
               Sub-categories
             </button>
           )}
+          {!showSubBtn && (
+            <button
+              onClick={onManageProducts}
+              className="flex-1 px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1"
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z"
+                />
+              </svg>
+              Products
+            </button>
+          )}
           <button
             onClick={onEdit}
             className="flex-1 px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
@@ -414,6 +438,7 @@ function CategoryCard({
 
 function CategoriesContent() {
   const { apiFetch } = useAdminAuth();
+  const router = useRouter();
 
   // root categories
   const [categories, setCategories] = useState<Category[]>([]);
@@ -651,6 +676,11 @@ function CategoriesContent() {
               onEdit={() => setModal(cat)}
               onDelete={() => setDeleteTarget(cat)}
               onManageSub={() => openSubPanel(cat)}
+              onManageProducts={() =>
+                router.push(
+                  `/admin/products?category=${cat._id}&categoryName=${encodeURIComponent(cat.name)}`,
+                )
+              }
             />
           ))}
         </div>

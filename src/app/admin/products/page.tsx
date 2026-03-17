@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 
@@ -88,11 +89,12 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: () =
 // ─── Product Modal ────────────────────────────────────────────────────────────
 
 function ProductModal({
-  product, categories, categoriesLoading, onClose, onSave,
+  product, categories, categoriesLoading, defaultCategoryId, onClose, onSave,
 }: {
   product: Product | null;
   categories: Category[];
   categoriesLoading: boolean;
+  defaultCategoryId?: string;
   onClose: () => void;
   onSave: (data: Partial<Product>, id?: string) => Promise<void>;
 }) {
@@ -110,7 +112,7 @@ function ProductModal({
       isFeatured: product.isFeatured ?? false,
       isVisible: product.isVisible ?? true,
       stock: String(product.stock ?? 0),
-    } : EMPTY_FORM
+    } : { ...EMPTY_FORM, category: defaultCategoryId ?? "" }
   );
   const [saving, setSaving] = useState(false);
 
@@ -282,6 +284,10 @@ const BADGE_STYLE: Record<string, string> = {
 
 function ProductsContent() {
   const { apiFetch } = useAdminAuth();
+  const searchParams = useSearchParams();
+  const filterCategoryId = searchParams.get("category");
+  const filterCategoryName = searchParams.get("categoryName");
+
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -301,11 +307,13 @@ function ProductsContent() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
+      const params = new URLSearchParams({ page: String(page), limit: "12" });
+      if (filterCategoryId) params.set("category", filterCategoryId);
       const res = await apiFetch<{
         success: boolean;
         data: Product[];
         pagination: { total: number; pages: number };
-      }>(`/admin/products?page=${page}&limit=12`);
+      }>(`/admin/products?${params.toString()}`);
       setProducts(res.data);
       setPagination({ total: res.pagination.total, pages: res.pagination.pages });
     } catch (e: unknown) {
@@ -313,19 +321,24 @@ function ProductsContent() {
     } finally {
       setLoading(false);
     }
-  }, [apiFetch, page]);
+  }, [apiFetch, page, filterCategoryId]);
 
   const fetchCategories = useCallback(async () => {
     setCategoriesLoading(true);
     try {
       const res = await apiFetch<{ success: boolean; data: Category[] }>("/categories");
-      setCategories(res.data);
+      let cats = res.data;
+      // If filtering by a sub-category not in the root list, inject it from URL params
+      if (filterCategoryId && filterCategoryName && !cats.find((c) => c._id === filterCategoryId)) {
+        cats = [...cats, { _id: filterCategoryId, name: filterCategoryName, slug: "" }];
+      }
+      setCategories(cats);
     } catch {
       setCategories([]);
     } finally {
       setCategoriesLoading(false);
     }
-  }, [apiFetch]);
+  }, [apiFetch, filterCategoryId, filterCategoryName]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
@@ -380,7 +393,18 @@ function ProductsContent() {
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-slate-400 font-medium">{pagination.total} products in store</p>
+        <div>
+          {filterCategoryName && (
+            <div className="flex items-center gap-2 mb-1">
+              <a href="/admin/categories" className="text-xs text-slate-400 hover:text-slate-700 transition-colors">Categories</a>
+              <span className="text-slate-300 text-xs">›</span>
+              <span className="text-xs font-semibold text-violet-700">{filterCategoryName}</span>
+            </div>
+          )}
+          <p className="text-sm text-slate-400 font-medium">
+            {pagination.total} product{pagination.total !== 1 ? "s" : ""}{filterCategoryName ? ` in "${filterCategoryName}"` : " in store"}
+          </p>
+        </div>
         <button
           onClick={() => setModalProduct("new")}
           className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-sm font-bold hover:from-violet-700 hover:to-indigo-700 transition-all hover:shadow-lg hover:shadow-violet-300/40 hover:-translate-y-0.5"
@@ -530,6 +554,7 @@ function ProductsContent() {
       {modalProduct !== null && (
         <ProductModal
           product={modalProduct === "new" ? null : modalProduct}
+          defaultCategoryId={modalProduct === "new" ? (filterCategoryId ?? undefined) : undefined}
           categories={categories}
           categoriesLoading={categoriesLoading}
           onClose={() => setModalProduct(null)}
@@ -564,5 +589,17 @@ function ProductsContent() {
 }
 
 export default function ProductsPage() {
-  return <AdminAuthGuard><ProductsContent /></AdminAuthGuard>;
+  return (
+    <AdminAuthGuard>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center py-24">
+            <div className="w-8 h-8 border-[2.5px] border-slate-200 border-t-violet-500 rounded-full animate-spin" />
+          </div>
+        }
+      >
+        <ProductsContent />
+      </Suspense>
+    </AdminAuthGuard>
+  );
 }

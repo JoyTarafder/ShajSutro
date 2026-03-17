@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 import bcrypt from "bcryptjs";
+import ContactMessage from "../models/ContactMessage";
 import User from "../models/User";
 import Order from "../models/Order";
 import Product from "../models/Product";
@@ -366,4 +367,58 @@ export const confirmPayment = asyncHandler(
       data: order,
     });
   }
+);
+
+// ─── GET /api/admin/messages ─────────────────────────────────────────────────
+
+export const getAllContactMessages = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const page = Math.max(1, parseInt((req.query.page as string) ?? "1"));
+    const limit = Math.min(100, parseInt((req.query.limit as string) ?? "20"));
+    const skip = (page - 1) * limit;
+    const isRead = req.query.isRead as string | undefined;
+
+    const filter: Record<string, unknown> = {};
+    if (isRead === "true" || isRead === "false") {
+      filter.isRead = isRead === "true";
+    }
+
+    const [messages, total, unreadCount] = await Promise.all([
+      ContactMessage.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      ContactMessage.countDocuments(filter),
+      ContactMessage.countDocuments({ isRead: false }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: messages,
+      meta: { unreadCount },
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  },
+);
+
+// ─── PUT /api/admin/messages/:id/read ────────────────────────────────────────
+
+export const markContactMessageRead = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const message = await ContactMessage.findByIdAndUpdate(
+      req.params.id,
+      { isRead: true },
+      { new: true },
+    );
+
+    if (!message) throw new AppError("Message not found", 404);
+
+    res.status(200).json({
+      success: true,
+      message: "Message marked as read",
+      data: message,
+    });
+  },
 );

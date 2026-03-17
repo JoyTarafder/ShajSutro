@@ -10,11 +10,14 @@ import adminRoutes from "./routes/admin.routes";
 import authRoutes from "./routes/auth.routes";
 import cartRoutes from "./routes/cart.routes";
 import categoryRoutes from "./routes/category.routes";
+import contactRoutes from "./routes/contact.routes";
 import jobRoutes from "./routes/job.routes";
 import jobApplicationRoutes from "./routes/jobApplication.routes";
 import orderRoutes from "./routes/order.routes";
 import productRoutes from "./routes/product.routes";
 import promoCodeRoutes from "./routes/promoCode.routes";
+import reviewRoutes from "./routes/review.routes";
+import statsRoutes from "./routes/stats.routes";
 
 // ─── Connect to MongoDB Atlas ─────────────────────────────────────────────────
 connectDB();
@@ -72,10 +75,13 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/contact", contactRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/promo-codes", promoCodeRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/job-applications", jobApplicationRoutes);
+app.use("/api/stats", statsRoutes);
 
 // ─── Error handling ───────────────────────────────────────────────────────────
 app.use(notFound);

@@ -3,6 +3,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { CartProvider } from "@/context/CartContext";
+import { FavoritesProvider } from "@/context/FavoritesContext";
 
 export default function StoreLayout({
   children,
@@ -11,12 +12,14 @@ export default function StoreLayout({
 }) {
   return (
     <CartProvider>
-      <Suspense fallback={null}>
-        <Navbar />
-      </Suspense>
-      <main className="flex-1 pt-20">{children}</main>
-      <Footer />
-      <CartDrawer />
+      <FavoritesProvider>
+        <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
+        <main className="flex-1 pt-20">{children}</main>
+        <Footer />
+        <CartDrawer />
+      </FavoritesProvider>
     </CartProvider>
   );
 }

@@ -18,7 +18,7 @@ const footerLinks = {
   Support: [
     { label: "FAQ", href: "#faq" },
     { label: "Shipping & Returns", href: "#" },
-    { label: "Size Guide", href: "#" },
+    { label: "Size Guide", href: "/size-guide" },
     { label: "Track Order", href: "#" },
   ],
   Legal: [

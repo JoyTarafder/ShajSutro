@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import FAQSection from "@/components/home/FAQSection";
+import { getApiBase } from "@/lib/apiBase";
 
 const contactInfo = [
   {
@@ -38,12 +40,34 @@ export default function ContactPage() {
     topic: "general",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
+  const [error, setError] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
-    await new Promise((r) => setTimeout(r, 1500));
-    setStatus("success");
+    setError("");
+    try {
+      const res = await fetch(`${getApiBase()}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message ?? "Failed to send message");
+      }
+      setStatus("success");
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+        topic: "general",
+      });
+    } catch (err: unknown) {
+      setStatus("idle");
+      setError(err instanceof Error ? err.message : "Failed to send message");
+    }
   };
 
   return (
@@ -97,7 +121,7 @@ export default function ContactPage() {
             <div className="bg-charcoal-50 rounded-2xl p-6">
               <h3 className="text-sm font-semibold text-charcoal-900 mb-2.5">Looking for quick answers?</h3>
               <p className="text-xs text-charcoal-400 mb-5 font-light">Check our FAQ &mdash; it covers returns, shipping, sizing, and more.</p>
-              <a href="/#faq" className="text-sm font-medium text-accent-600 hover:text-accent-700 flex items-center gap-1.5 transition-colors duration-300 group">
+              <a href="#faq" className="text-sm font-medium text-accent-600 hover:text-accent-700 flex items-center gap-1.5 transition-colors duration-300 group">
                 View FAQ
                 <svg className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -128,6 +152,12 @@ export default function ContactPage() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <h2 className="text-xl font-semibold text-charcoal-950 mb-7">Send a Message</h2>
+
+                {error && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-medium text-charcoal-600 mb-2.5">Topic</label>
@@ -230,6 +260,10 @@ export default function ContactPage() {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="border-t border-charcoal-100 bg-warm-50">
+        <FAQSection />
       </div>
     </div>
   );

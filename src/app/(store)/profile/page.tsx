@@ -18,12 +18,21 @@ interface UserData {
 }
 
 interface OrderItem {
+  product?: string;
   name: string;
   price: number;
   quantity: number;
   size: string;
   color: string;
   image: string;
+}
+
+interface ReviewedPair { product: string; order: string; }
+
+interface ReviewDraft {
+  orderId: string;
+  productId: string;
+  productName: string;
 }
 
 interface Order {
@@ -191,7 +200,7 @@ export default function ProfilePage() {
           {/* ── Main content ── */}
           <main className="flex-1 min-w-0">
             {tab === "overview" && <OverviewTab user={user} orders={orders} onFetchOrders={fetchOrders} onTabChange={setTab} />}
-            {tab === "orders"   && <OrdersTab orders={orders} onFetch={fetchOrders} />}
+            {tab === "orders"   && <OrdersTab orders={orders} onFetch={fetchOrders} token={token!} />}
             {tab === "account"  && <AccountTab user={user} token={token!} onUpdated={fetchUser} />}
             {tab === "security" && <SecurityTab token={token!} />}
           </main>
@@ -287,8 +296,28 @@ function OverviewTab({
 
 // ─── Orders Tab ───────────────────────────────────────────────────────────────
 
-function OrdersTab({ orders, onFetch }: { orders: Order[]; onFetch: () => void }) {
+function OrdersTab({ orders, onFetch, token }: { orders: Order[]; onFetch: () => void; token: string }) {
+  const [reviewedPairs, setReviewedPairs] = useState<Set<string>>(new Set());
+  const [reviewDraft, setReviewDraft] = useState<ReviewDraft | null>(null);
+
+  const fetchReviewedPairs = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/reviews/mine`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const pairs = (data.data as ReviewedPair[]).map(
+        (p) => `${p.order}:${p.product}`,
+      );
+      setReviewedPairs(new Set(pairs));
+    } catch {
+      setReviewedPairs(new Set());
+    }
+  }, [token]);
+
   useEffect(() => { onFetch(); }, [onFetch]);
+  useEffect(() => { fetchReviewedPairs(); }, [fetchReviewedPairs]);
 
   const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -312,9 +341,32 @@ function OrdersTab({ orders, onFetch }: { orders: Order[]; onFetch: () => void }
       </div>
       <div className="divide-y divide-charcoal-50">
         {sorted.map((order) => (
-          <OrderRow key={order._id} order={order} expanded />
+          <OrderRow
+            key={order._id}
+            order={order}
+            expanded
+            reviewedPairs={reviewedPairs}
+            onWriteReview={(draft) => setReviewDraft(draft)}
+          />
         ))}
       </div>
+
+      {reviewDraft && (
+        <ReviewModal
+          draft={reviewDraft}
+          token={token}
+          onClose={() => setReviewDraft(null)}
+          onSubmitted={async ({ orderId, productId }) => {
+            setReviewedPairs((prev) => {
+              const next = new Set(prev);
+              next.add(`${orderId}:${productId}`);
+              return next;
+            });
+            setReviewDraft(null);
+            await fetchReviewedPairs();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -328,7 +380,17 @@ const paymentStatusConfig = {
 const methodLabel = (m: Order["paymentMethod"]) =>
   m === "bkash" ? "bKash" : m === "nagad" ? "Nagad" : m === "rocket" ? "Rocket" : "Cash on Delivery";
 
-function OrderRow({ order, expanded = false }: { order: Order; expanded?: boolean }) {
+function OrderRow({
+  order,
+  expanded = false,
+  reviewedPairs,
+  onWriteReview,
+}: {
+  order: Order;
+  expanded?: boolean;
+  reviewedPairs?: Set<string>;
+  onWriteReview?: (draft: ReviewDraft) => void;
+}) {
   const [open, setOpen] = useState(false);
   const cfg    = statusConfig[order.status];
   const payCfg = paymentStatusConfig[order.paymentStatus];
@@ -377,6 +439,27 @@ function OrderRow({ order, expanded = false }: { order: Order; expanded?: boolea
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-charcoal-800 truncate">{item.name}</p>
                 <p className="text-xs text-charcoal-400 mt-0.5">{item.size} · {item.color} · Qty {item.quantity}</p>
+                {order.status === "delivered" && item.product && (
+                  reviewedPairs?.has(`${order._id}:${item.product}`) ? (
+                    <span className="inline-flex mt-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200">
+                      Reviewed
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onWriteReview?.({
+                          orderId: order._id,
+                          productId: item.product!,
+                          productName: item.name,
+                        })
+                      }
+                      className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-charcoal-950 text-white hover:bg-charcoal-800 transition-colors"
+                    >
+                      Write Review
+                    </button>
+                  )
+                )}
               </div>
               <p className="text-sm font-semibold text-charcoal-950 shrink-0">৳{(item.price * item.quantity).toLocaleString()}</p>
             </div>
@@ -421,6 +504,145 @@ function OrderRow({ order, expanded = false }: { order: Order; expanded?: boolea
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ReviewModal({
+  draft,
+  token,
+  onClose,
+  onSubmitted,
+}: {
+  draft: ReviewDraft;
+  token: string;
+  onClose: () => void;
+  onSubmitted: (payload: { orderId: string; productId: string }) => Promise<void>;
+}) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [hovered, setHovered] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rating < 1 || rating > 5) {
+      setError("Please select a rating between 1 and 5");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API}/api/reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          productId: draft.productId,
+          orderId: draft.orderId,
+          rating,
+          comment,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message ?? "Failed to submit review");
+      }
+
+      await onSubmitted({ orderId: draft.orderId, productId: draft.productId });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to submit review");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm p-4 flex items-center justify-center">
+      <div className="w-full max-w-md bg-white rounded-2xl border border-charcoal-100 shadow-2xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-charcoal-50 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-charcoal-950">Write a Review</p>
+            <p className="text-xs text-charcoal-400 mt-0.5 line-clamp-1">{draft.productName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg hover:bg-charcoal-50 text-charcoal-400 hover:text-charcoal-700 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="p-6 space-y-5">
+          <div>
+            <p className="text-xs font-medium text-charcoal-600 mb-2">Rating</p>
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const active = star <= (hovered || rating);
+                return (
+                  <button
+                    key={star}
+                    type="button"
+                    onMouseEnter={() => setHovered(star)}
+                    onMouseLeave={() => setHovered(0)}
+                    onClick={() => setRating(star)}
+                    className="p-1"
+                    aria-label={`Set ${star} star rating`}
+                  >
+                    <svg
+                      className={`w-6 h-6 ${active ? "text-amber-500" : "text-charcoal-200"}`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-charcoal-600 mb-2">Comment</label>
+            <textarea
+              rows={4}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your experience with this product"
+              className="input-field resize-none"
+            />
+          </div>
+
+          {error && (
+            <div className="px-3 py-2 rounded-lg text-xs bg-red-50 border border-red-200 text-red-600">
+              {error}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-charcoal-200 text-sm font-medium text-charcoal-700 hover:bg-charcoal-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-charcoal-950 text-white text-sm font-semibold hover:bg-charcoal-800 disabled:opacity-60"
+            >
+              {loading ? "Submitting..." : "Submit Review"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

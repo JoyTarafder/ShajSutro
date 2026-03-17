@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Product } from "@/types";
 import { useCart } from "@/context/CartContext";
+import { useFavorites } from "@/context/FavoritesContext";
+import { notifyInfo, notifySuccess } from "@/lib/notify";
 
 interface ProductCardProps {
   product: Product;
@@ -14,12 +16,15 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addItem } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
+
+  const favored = isFavorite(product.id);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsAddingToCart(true);
-    addItem(product, product.sizes[0], product.colors[0]);
+    addItem(product, product.sizes[0] ?? "", product.colors[0] ?? "");
     setTimeout(() => setIsAddingToCart(false), 1000);
   };
 
@@ -87,13 +92,24 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
 
           <button
-            className={`absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-soft text-charcoal-300 hover:text-red-500 transition-all duration-300 ${
+            className={`absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-soft transition-all duration-300 ${
               isHovered ? "opacity-100 scale-100" : "opacity-0 scale-90"
-            }`}
-            aria-label="Add to wishlist"
-            onClick={(e) => e.preventDefault()}
+            } ${favored ? "text-red-500" : "text-charcoal-300 hover:text-red-500"}`}
+            aria-label={favored ? "Remove from favorites" : "Add to favorites"}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const next = toggleFavorite(product.id);
+              if (next) notifySuccess("Added to favorites");
+              else notifyInfo("Removed from favorites");
+            }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-4 h-4"
+              fill={favored ? "currentColor" : "none"}
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
           </button>

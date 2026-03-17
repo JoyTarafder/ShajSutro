@@ -10,8 +10,10 @@ import Product from "../models/Product";
 export const getProducts = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const {
+      ids,
       category,
       badge,
+      isFeatured,
       minPrice,
       maxPrice,
       inStock,
@@ -23,6 +25,14 @@ export const getProducts = asyncHandler(
 
     const filter: Record<string, unknown> = { isVisible: { $ne: false } };
 
+    if (ids) {
+      const list = ids
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => mongoose.Types.ObjectId.isValid(s));
+      filter._id = { $in: list.map((s) => new mongoose.Types.ObjectId(s)) };
+    }
+
     if (category) {
       if (mongoose.Types.ObjectId.isValid(category)) {
         filter.category = category;
@@ -32,6 +42,7 @@ export const getProducts = asyncHandler(
       }
     }
     if (badge) filter.badge = badge;
+    if (isFeatured !== undefined) filter.isFeatured = isFeatured === "true";
     if (inStock !== undefined) filter.inStock = inStock === "true";
 
     if (minPrice || maxPrice) {

@@ -82,6 +82,25 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: "Messages",
+    href: "/admin/messages",
+    icon: (
+      <svg
+        className="w-[18px] h-[18px]"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.75}
+          d="M7.5 8.25h9m-9 3h6m-8.25 8.25h13.5A2.25 2.25 0 0021 17.25V6.75a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6.75v10.5a2.25 2.25 0 002.25 2.25z"
+        />
+      </svg>
+    ),
+  },
+  {
     label: "Categories",
     href: "/admin/categories",
     icon: (

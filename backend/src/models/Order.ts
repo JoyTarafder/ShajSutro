@@ -11,8 +11,8 @@ const orderItemSchema = new Schema(
     name: { type: String, required: true },
     price: { type: Number, required: true },
     quantity: { type: Number, required: true, min: 1 },
-    size: { type: String, required: true },
-    color: { type: String, required: true },
+    size: { type: String, default: "" },
+    color: { type: String, default: "" },
     image: { type: String, default: "" },
   },
   { _id: false }
