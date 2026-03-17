@@ -492,7 +492,7 @@ function CategoriesContent() {
       setLoadingSubs(true);
       try {
         const res = await apiFetch<{ success: boolean; data: Category[] }>(
-          `/categories/${parentId}/subcategories`,
+          `/categories/subcategories/${parentId}`,
         );
         setSubcategories(res.data);
       } catch (e: unknown) {
