@@ -86,7 +86,7 @@ export default function Navbar() {
         if (!j?.success || !Array.isArray(j?.data)) return;
         const normalized = j.data
           .map((cat: unknown) => normalizeCategory(cat))
-          .filter((cat): cat is NavCategory => cat !== null);
+          .filter((cat: NavCategory | null): cat is NavCategory => cat !== null);
         setCategories(normalized);
       })
       .catch(() => {});
