@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getApiBase } from "@/lib/apiBase";
 
 type HeroStats = {
   productsCount: number;
@@ -13,7 +12,8 @@ type HeroStats = {
 
 function formatCompact(n: number) {
   if (!Number.isFinite(n)) return "0";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M+`;
+  if (n >= 1_000_000)
+    return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M+`;
   if (n >= 1_000) return `${Math.round(n / 1_000)}K+`;
   return `${n}+`;
 }
@@ -23,8 +23,11 @@ export default function HeroSection() {
 
   useEffect(() => {
     let alive = true;
-    fetch(`${getApiBase()}/api/stats/hero`)
-      .then((r) => r.json())
+    fetch("/api/stats/hero")
+      .then((r) => {
+        if (!r.ok) throw new Error(`hero stats request failed: ${r.status}`);
+        return r.json();
+      })
       .then((json) => {
         if (!alive) return;
         if (json?.success && json?.data) setStats(json.data as HeroStats);
@@ -39,7 +42,9 @@ export default function HeroSection() {
   const statItems = useMemo(() => {
     const products = stats ? formatCompact(stats.productsCount) : "—";
     const customers = stats ? formatCompact(stats.customersCount) : "—";
-    const rating = stats ? `${Math.max(0, Math.min(5, stats.avgRating)).toFixed(1)}★` : "—";
+    const rating = stats
+      ? `${Math.max(0, Math.min(5, stats.avgRating)).toFixed(1)}★`
+      : "—";
     return [
       { value: products, label: "Products" },
       { value: customers, label: "Customers" },
@@ -66,21 +71,29 @@ export default function HeroSection() {
               Dress with
               <br />
               <span className="relative inline-block mt-1">
-                <span className="relative z-10 shimmer-gradient">intention.</span>
-                <span className="absolute bottom-1 sm:bottom-2 left-0 right-0 h-3 sm:h-4 -z-0 rounded-full" style={{ background: "rgba(167,139,250,0.18)" }} />
+                <span className="relative z-10 shimmer-gradient">
+                  intention.
+                </span>
+                <span
+                  className="absolute bottom-1 sm:bottom-2 left-0 right-0 h-3 sm:h-4 -z-0 rounded-full"
+                  style={{ background: "rgba(167,139,250,0.18)" }}
+                />
               </span>
             </h1>
 
             <p className="text-lg text-charcoal-400 max-w-lg leading-relaxed font-light">
-              Thoughtfully crafted clothing for the modern wardrobe.
-              Minimalist designs, premium materials, enduring style.
+              Thoughtfully crafted clothing for the modern wardrobe. Minimalist
+              designs, premium materials, enduring style.
             </p>
 
             <div className="flex flex-wrap gap-4 pt-2">
               <Link href="/shop" className="btn-primary text-base px-10 py-4">
                 Shop Now
               </Link>
-              <Link href="/about" className="btn-secondary text-base px-10 py-4">
+              <Link
+                href="/about"
+                className="btn-secondary text-base px-10 py-4"
+              >
                 Our Story
               </Link>
             </div>
@@ -88,8 +101,12 @@ export default function HeroSection() {
             <div className="flex gap-12 pt-8 border-t border-charcoal-100">
               {statItems.map((stat) => (
                 <div key={stat.label}>
-                  <p className="text-2xl font-semibold text-charcoal-950 tracking-tight">{stat.value}</p>
-                  <p className="text-sm text-charcoal-400 mt-0.5 font-light">{stat.label}</p>
+                  <p className="text-2xl font-semibold text-charcoal-950 tracking-tight">
+                    {stat.value}
+                  </p>
+                  <p className="text-sm text-charcoal-400 mt-0.5 font-light">
+                    {stat.label}
+                  </p>
                 </div>
               ))}
             </div>
@@ -131,7 +148,9 @@ export default function HeroSection() {
       </div>
 
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 text-charcoal-300">
-        <span className="text-[10px] tracking-[0.3em] uppercase font-medium">Scroll</span>
+        <span className="text-[10px] tracking-[0.3em] uppercase font-medium">
+          Scroll
+        </span>
         <div className="w-px h-10 bg-gradient-to-b from-charcoal-300 to-transparent" />
       </div>
     </section>
