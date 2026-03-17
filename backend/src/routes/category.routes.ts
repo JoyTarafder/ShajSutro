@@ -12,6 +12,7 @@ import { adminOnly, protect } from "../middleware/auth.middleware";
 const router = Router();
 
 router.get("/", getCategories);
+router.get("/subcategories/:id", getSubcategories);
 router.get("/:id/subcategories", getSubcategories);
 router.get("/:slug", getCategoryBySlug);
 router.post("/", protect, adminOnly, createCategory);
