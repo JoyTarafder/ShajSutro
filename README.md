@@ -181,8 +181,10 @@ Default development URLs:
 | Variable              | Required | Example                 | Notes                                |
 | --------------------- | -------- | ----------------------- | ------------------------------------ |
 | `NEXT_PUBLIC_API_URL` | Yes      | `http://localhost:4000` | Base URL for API calls from frontend |
+| `API_PROXY_TARGET`    | Vercel   | `https://api.example.com` | Server-side proxy target for `/api/*` routes |
 
-> Important: frontend fallback in code defaults to `http://localhost:5000`, while backend server default is `4000`. Set `NEXT_PUBLIC_API_URL` explicitly to avoid port mismatch.
+> Important: frontend fallback now uses `http://localhost:4000` in local development.
+> For Vercel, set `API_PROXY_TARGET` to your backend URL so relative `/api/*` calls can be proxied safely.
 
 ### Backend (`backend/.env`)
 
@@ -261,7 +263,8 @@ Base server URL: `http://localhost:4000`
 ### Frontend (Vercel)
 
 - Set project root to repository root
-- Add environment variable `NEXT_PUBLIC_API_URL` to deployed backend URL
+- Add environment variable `API_PROXY_TARGET` to deployed backend URL (recommended)
+- Optional: keep `NEXT_PUBLIC_API_URL` as backend URL if you prefer direct client calls
 - Build command: `npm run build`
 
 ### Backend (Render / Railway / VPS)
@@ -278,7 +281,8 @@ Base server URL: `http://localhost:4000`
 
 ### API calls failing from frontend
 
-- Verify `NEXT_PUBLIC_API_URL` is set correctly
+- Verify `API_PROXY_TARGET` points to the deployed backend URL
+- If using direct browser calls, verify `NEXT_PUBLIC_API_URL` is set correctly
 - Confirm backend is running on expected port
 - Check CORS by adding frontend URL to `CLIENT_URL`
 

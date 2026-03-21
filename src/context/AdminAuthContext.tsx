@@ -8,12 +8,11 @@ import React, {
   useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
+import { getApiBase } from "@/lib/apiBase";
 
 // Strip trailing /api or / then always append /api — so the env var works
 // whether set as "http://host:5000" OR "http://host:5000/api"
-const _rawBase = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"
-).replace(/\/api\/?$/, "").replace(/\/$/, "");
+const _rawBase = getApiBase();
 const API_BASE = `${_rawBase}/api`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
