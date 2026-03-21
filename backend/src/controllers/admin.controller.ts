@@ -15,6 +15,9 @@ export const getDashboardStats = asyncHandler(
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    const today = new Date();
+    const toYmd = (d: Date): string => d.toISOString().slice(0, 10);
+
     const [
       totalUsers,
       totalOrders,
@@ -61,6 +64,24 @@ export const getDashboardStats = asyncHandler(
     const totalRevenue: number =
       (revenueResult[0] as { total?: number } | undefined)?.total ?? 0;
 
+    // Build a dense 30-day revenue series so charts always render predictable X-axis data.
+    const revenueMap = new Map<string, number>(
+      (revenueByDay as Array<{ date?: string; revenue?: number }>).map((item) => [
+        String(item.date ?? ""),
+        typeof item.revenue === "number" && Number.isFinite(item.revenue)
+          ? item.revenue
+          : 0,
+      ])
+    );
+
+    const revenueByDaySeries: { date: string; revenue: number }[] = [];
+    for (let i = 29; i >= 0; i -= 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const key = toYmd(date);
+      revenueByDaySeries.push({ date: key, revenue: revenueMap.get(key) ?? 0 });
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -70,7 +91,7 @@ export const getDashboardStats = asyncHandler(
         totalRevenue,
         ordersByStatus,
         recentOrders,
-        revenueByDay,
+        revenueByDay: revenueByDaySeries,
       },
     });
   }

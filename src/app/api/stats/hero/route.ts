@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerBackendBase } from "@/lib/serverBackend";
+import { getServerBackendBase, joinBackendUrl } from "@/lib/serverBackend";
 
 type HeroStats = {
   productsCount: number;
@@ -17,9 +17,12 @@ async function getFallbackStats(backendBase: string): Promise<HeroStats> {
   }
 
   try {
-    const res = await fetch(`${backendBase}/api/products?limit=1`, {
-      cache: "no-store",
-    });
+    const res = await fetch(
+      `${joinBackendUrl(backendBase, "/api/products")}?limit=1`,
+      {
+        cache: "no-store",
+      },
+    );
     if (!res.ok) throw new Error("fallback products request failed");
     const json = await res.json();
     const productsCount = toNumber(json?.pagination?.total, 0);
@@ -41,7 +44,7 @@ export async function GET() {
       );
     }
 
-    const res = await fetch(`${backendBase}/api/stats/hero`, {
+    const res = await fetch(joinBackendUrl(backendBase, "/api/stats/hero"), {
       cache: "no-store",
     });
     if (!res.ok) throw new Error(`hero stats status ${res.status}`);

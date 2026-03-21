@@ -1,5 +1,7 @@
 export function getApiBase(): string {
-  const raw = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").trim();
+  const raw = (
+    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"
+  ).trim();
   // Accept values like:
   // - "https://example.com"
   // - "https://example.com/"
@@ -29,3 +31,9 @@ export function getApiBase(): string {
   return cleaned === "" || cleaned === "/" ? "" : cleaned;
 }
 
+/** Prefix for browser calls: `/api` (same-origin) or `https://host/api` (direct backend). */
+export function getClientApiPrefix(): string {
+  const base = getApiBase();
+  if (!base) return "/api";
+  return `${base.replace(/\/$/, "")}/api`;
+}

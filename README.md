@@ -178,9 +178,9 @@ Default development URLs:
 
 ### Frontend (`.env.local`)
 
-| Variable              | Required | Example                 | Notes                                |
-| --------------------- | -------- | ----------------------- | ------------------------------------ |
-| `NEXT_PUBLIC_API_URL` | Yes      | `http://localhost:4000` | Base URL for API calls from frontend |
+| Variable              | Required | Example                   | Notes                                        |
+| --------------------- | -------- | ------------------------- | -------------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | Yes      | `http://localhost:4000`   | Base URL for API calls from frontend         |
 | `API_PROXY_TARGET`    | Vercel   | `https://api.example.com` | Server-side proxy target for `/api/*` routes |
 
 > Important: frontend fallback now uses `http://localhost:4000` in local development.

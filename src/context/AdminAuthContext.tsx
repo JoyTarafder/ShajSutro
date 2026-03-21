@@ -1,19 +1,14 @@
 "use client";
 
+import { getClientApiPrefix } from "@/lib/apiBase";
+import { useRouter } from "next/navigation";
 import React, {
   createContext,
-  useContext,
-  useState,
-  useEffect,
   useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
-import { useRouter } from "next/navigation";
-import { getApiBase } from "@/lib/apiBase";
-
-// Strip trailing /api or / then always append /api — so the env var works
-// whether set as "http://host:5000" OR "http://host:5000/api"
-const _rawBase = getApiBase();
-const API_BASE = `${_rawBase}/api`;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,7 +31,7 @@ interface AdminAuthContextType {
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(
-  undefined
+  undefined,
 );
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -66,7 +61,9 @@ export const AdminAuthProvider = ({
   const apiFetch = useCallback(
     async <T,>(path: string, options: RequestInit = {}): Promise<T> => {
       const storedToken = localStorage.getItem("admin_token");
-      const res = await fetch(`${API_BASE}${path}`, {
+      const p = path.startsWith("/") ? path : `/${path}`;
+      const url = `${getClientApiPrefix()}${p}`;
+      const res = await fetch(url, {
         ...options,
         headers: {
           "Content-Type": "application/json",
@@ -85,20 +82,23 @@ export const AdminAuthProvider = ({
         throw new Error("Session expired. Please log in again.");
       }
 
-      const data = (await res.json()) as { success: boolean; message?: string } & T;
+      const data = (await res.json()) as {
+        success: boolean;
+        message?: string;
+      } & T;
       if (!res.ok) {
         throw new Error(
-          (data as { message?: string }).message ?? "Request failed"
+          (data as { message?: string }).message ?? "Request failed",
         );
       }
       return data;
     },
-    [router]
+    [router],
   );
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(`${getClientApiPrefix()}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -132,7 +132,7 @@ export const AdminAuthProvider = ({
       setAdmin(adminUser);
       router.push("/admin/dashboard");
     },
-    [router]
+    [router],
   );
 
   const logout = useCallback(() => {
@@ -156,6 +156,7 @@ export const AdminAuthProvider = ({
 
 export const useAdminAuth = (): AdminAuthContextType => {
   const ctx = useContext(AdminAuthContext);
-  if (!ctx) throw new Error("useAdminAuth must be used inside AdminAuthProvider");
+  if (!ctx)
+    throw new Error("useAdminAuth must be used inside AdminAuthProvider");
   return ctx;
 };
