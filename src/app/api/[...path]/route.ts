@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerBackendBase } from "@/lib/serverBackend";
 
 export const runtime = "nodejs";
 
@@ -15,33 +16,40 @@ const HOP_BY_HOP_HEADERS = new Set([
   "content-length",
 ]);
 
-function getProxyBase(): string {
-  const raw = (
-    process.env.API_PROXY_TARGET ??
-    process.env.BACKEND_URL ??
-    process.env.NEXT_PUBLIC_API_URL ??
-    ""
-  ).trim();
+/** Prefer pathname over route params — more reliable on Vercel than `params` alone. */
+function parseApiPathSegments(pathname: string): string[] {
+  if (!pathname.startsWith("/api")) return [];
+  const rest = pathname.slice("/api".length).replace(/^\/+/, "");
+  if (!rest) return [];
+  return rest.split("/").filter(Boolean);
+}
 
-  if (!raw || raw === "/") return "";
-  return raw.replace(/\/api\/?$/, "").replace(/\/$/, "");
+/** If a client ever hits `/api/api/...`, avoid forwarding `/api/api/...` to the backend. */
+function normalizeSegments(segments: string[]): string[] {
+  if (segments[0] === "api") return segments.slice(1);
+  return segments;
 }
 
 function buildTargetUrl(req: NextRequest, path: string[]): string | null {
-  const base = getProxyBase();
+  const base = getServerBackendBase();
   if (!base) return null;
 
-  let target: URL;
+  let baseUrl: URL;
   try {
-    target = new URL(base);
+    baseUrl = new URL(base);
   } catch {
     return null;
   }
 
   // Prevent accidental self-proxy loops when API URL is set to the same Vercel domain.
-  if (target.origin === req.nextUrl.origin) return null;
+  if (baseUrl.origin === req.nextUrl.origin) return null;
 
-  const upstream = new URL(`/api/${path.join("/")}`, target.origin);
+  const segments = normalizeSegments(path);
+  const relativePath = `api/${segments.join("/")}`;
+  // Resolve relative to the full backend base (including any path prefix), not only
+  // origin — `new URL('/api/...', origin)` drops pathname segments on the base URL.
+  const baseForResolve = base.endsWith("/") ? base : `${base}/`;
+  const upstream = new URL(relativePath, baseForResolve);
   upstream.search = req.nextUrl.search;
   return upstream.toString();
 }
@@ -58,8 +66,32 @@ function buildForwardHeaders(req: NextRequest): Headers {
   return headers;
 }
 
-async function forward(req: NextRequest, params: { path: string[] }) {
-  const targetUrl = buildTargetUrl(req, params.path);
+type RouteParams = { path?: string[] };
+
+async function resolveRouteParams(
+  context: { params: RouteParams | Promise<RouteParams> },
+): Promise<string[] | undefined> {
+  const p = await Promise.resolve(context.params);
+  return p.path;
+}
+
+async function forward(req: NextRequest, paramsPath: string[] | undefined) {
+  const fromUrl = parseApiPathSegments(req.nextUrl.pathname);
+  const pathSegments =
+    fromUrl.length > 0 ? fromUrl : normalizeSegments(paramsPath ?? []);
+
+  if (pathSegments.length === 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Invalid API path. Expected /api/... behind the Next.js proxy.",
+      },
+      { status: 400 },
+    );
+  }
+
+  const targetUrl = buildTargetUrl(req, pathSegments);
 
   if (!targetUrl) {
     return NextResponse.json(
@@ -97,26 +129,44 @@ async function forward(req: NextRequest, params: { path: string[] }) {
   });
 }
 
-export async function GET(req: NextRequest, context: { params: { path: string[] } }) {
-  return forward(req, context.params);
+export async function GET(
+  req: NextRequest,
+  context: { params: RouteParams | Promise<RouteParams> },
+) {
+  return forward(req, await resolveRouteParams(context));
 }
 
-export async function POST(req: NextRequest, context: { params: { path: string[] } }) {
-  return forward(req, context.params);
+export async function POST(
+  req: NextRequest,
+  context: { params: RouteParams | Promise<RouteParams> },
+) {
+  return forward(req, await resolveRouteParams(context));
 }
 
-export async function PUT(req: NextRequest, context: { params: { path: string[] } }) {
-  return forward(req, context.params);
+export async function PUT(
+  req: NextRequest,
+  context: { params: RouteParams | Promise<RouteParams> },
+) {
+  return forward(req, await resolveRouteParams(context));
 }
 
-export async function PATCH(req: NextRequest, context: { params: { path: string[] } }) {
-  return forward(req, context.params);
+export async function PATCH(
+  req: NextRequest,
+  context: { params: RouteParams | Promise<RouteParams> },
+) {
+  return forward(req, await resolveRouteParams(context));
 }
 
-export async function DELETE(req: NextRequest, context: { params: { path: string[] } }) {
-  return forward(req, context.params);
+export async function DELETE(
+  req: NextRequest,
+  context: { params: RouteParams | Promise<RouteParams> },
+) {
+  return forward(req, await resolveRouteParams(context));
 }
 
-export async function OPTIONS(req: NextRequest, context: { params: { path: string[] } }) {
-  return forward(req, context.params);
+export async function OPTIONS(
+  req: NextRequest,
+  context: { params: RouteParams | Promise<RouteParams> },
+) {
+  return forward(req, await resolveRouteParams(context));
 }

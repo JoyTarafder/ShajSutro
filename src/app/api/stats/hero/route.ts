@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
+import { getServerBackendBase } from "@/lib/serverBackend";
 
 type HeroStats = {
   productsCount: number;
   customersCount: number;
   avgRating: number;
 };
-
-function getBackendBase(): string {
-  const raw = (process.env.NEXT_PUBLIC_API_URL ?? "").trim();
-  return raw.replace(/\/api\/?$/, "").replace(/\/$/, "");
-}
 
 function toNumber(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -34,7 +30,7 @@ async function getFallbackStats(backendBase: string): Promise<HeroStats> {
 }
 
 export async function GET() {
-  const backendBase = getBackendBase();
+  const backendBase = getServerBackendBase();
 
   try {
     if (!backendBase) {

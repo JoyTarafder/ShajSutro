@@ -28,8 +28,9 @@ router.get("/products", getAdminProducts);
 // User management
 router.get("/users", getAllUsers);
 router.post("/users", createUser);
-router.put("/users/:id", updateUser);
+// More specific routes must come before /users/:id
 router.put("/users/:id/block", blockUser);
+router.put("/users/:id", updateUser);
 router.delete("/users/:id", deleteUser);
 
 // Order management
