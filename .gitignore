@@ -42,3 +42,8 @@ Thumbs.db
 
 # Stray folders
 ShajSutro.git/
+DEPLOYMENT_SUMMARY.md
+QUICK_REFERENCE.md
+VERCEL_DEPLOYMENT_GUIDE.md
+backend/DEPLOYMENT_CHECKLIST.md
+backend/DEPLOYMENT_COMMANDS.sh
