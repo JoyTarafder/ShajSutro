@@ -1,5 +1,4 @@
-"use client";
-
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 function Section({
@@ -9,7 +8,7 @@ function Section({
 }: {
   id: string;
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section id={id} className="scroll-mt-28">

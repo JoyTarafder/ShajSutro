@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import "./globals.css";
-import ToastProvider from "@/components/ui/ToastProvider";
+
+const ToastProvider = dynamic(
+  () => import("@/components/ui/ToastProvider"),
+  { ssr: false },
+);
 
 export const metadata: Metadata = {
   title: {
