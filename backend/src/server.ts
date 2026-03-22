@@ -3,8 +3,11 @@ import "dotenv/config";
 import express from "express";
 import mongoose from "mongoose";
 import connectDB from "./config/db";
-import { AppError } from "./middleware/error.middleware";
-import { errorHandler, notFound } from "./middleware/error.middleware";
+import {
+  AppError,
+  errorHandler,
+  notFound,
+} from "./middleware/error.middleware";
 
 // ─── Route imports ────────────────────────────────────────────────────────────
 import path from "path";
